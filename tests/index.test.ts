@@ -17,6 +17,10 @@ import {
   kvTable,
   histogram,
   compare,
+  socialFormat,
+  thread,
+  buildInPublic,
+  socialCaption,
 } from "../src/index.js";
 import type {
   SparklineConfig,
@@ -594,5 +598,232 @@ describe("compare", () => {
     expect(result.delta).toBe(0);
     expect(result.direction).toBe("same");
     expect(result.deltaPercent).toBe(0);
+  });
+});
+
+// --- v0.5.0 Tests ---
+
+describe("socialFormat", () => {
+  it("should return text under X limit without truncation", () => {
+    const result = socialFormat("Hello world", { platform: "x" });
+    expect(result.text).toBe("Hello world");
+    expect(result.truncated).toBe(false);
+    expect(result.limit).toBe(280);
+    expect(result.platform).toBe("x");
+  });
+
+  it("should truncate long text for X", () => {
+    const longText = "A".repeat(300);
+    const result = socialFormat(longText, { platform: "x" });
+    expect(result.truncated).toBe(true);
+    expect(result.text.length).toBeLessThanOrEqual(280);
+    expect(result.text).toEndWith("...");
+  });
+
+  it("should append hashtags", () => {
+    const result = socialFormat("Status update", {
+      platform: "x",
+      hashtags: ["buildinpublic", "devops"],
+    });
+    expect(result.text).toInclude("#buildinpublic");
+    expect(result.text).toInclude("#devops");
+  });
+
+  it("should not double-hash already prefixed tags", () => {
+    const result = socialFormat("Hi", { hashtags: ["#test"] });
+    expect(result.text).toInclude("#test");
+    expect(result.text).not.toInclude("##test");
+  });
+
+  it("should respect Bluesky 300 char limit", () => {
+    const result = socialFormat("A".repeat(350), { platform: "bluesky" });
+    expect(result.limit).toBe(300);
+    expect(result.text.length).toBeLessThanOrEqual(300);
+    expect(result.truncated).toBe(true);
+  });
+
+  it("should respect Instagram 2200 char limit", () => {
+    const result = socialFormat("Short post", { platform: "instagram" });
+    expect(result.limit).toBe(2200);
+    expect(result.truncated).toBe(false);
+  });
+
+  it("should use custom maxLength override", () => {
+    const result = socialFormat("A".repeat(200), { maxLength: 100 });
+    expect(result.limit).toBe(100);
+    expect(result.text.length).toBeLessThanOrEqual(100);
+  });
+
+  it("should use custom truncation marker", () => {
+    const result = socialFormat("A".repeat(300), { platform: "x", truncationMarker: " [more]" });
+    expect(result.text).toEndWith("[more]");
+  });
+});
+
+describe("thread", () => {
+  it("should return single post for short text", () => {
+    const result = thread("Hello world", { platform: "x" });
+    expect(result.count).toBe(1);
+    expect(result.posts[0]).toBe("Hello world");
+  });
+
+  it("should split long text into multiple posts", () => {
+    const paragraphs = Array.from({ length: 10 }, (_, i) =>
+      `Paragraph ${i + 1}: ${"word ".repeat(30)}`
+    ).join("\n\n");
+    const result = thread(paragraphs, { platform: "x" });
+    expect(result.count).toBeGreaterThan(1);
+    for (const post of result.posts) {
+      expect(post.length).toBeLessThanOrEqual(280);
+    }
+  });
+
+  it("should add numbering to multi-post threads", () => {
+    const paragraphs = Array.from({ length: 10 }, (_, i) =>
+      `Paragraph ${i + 1}: ${"word ".repeat(30)}`
+    ).join("\n\n");
+    const result = thread(paragraphs, { platform: "x", numbering: true });
+    expect(result.posts[0]).toInclude("(1/");
+    expect(result.posts[result.count - 1]).toInclude(`(${result.count}/${result.count})`);
+  });
+
+  it("should not add numbering to single post", () => {
+    const result = thread("Short", { numbering: true });
+    expect(result.posts[0]).toBe("Short");
+  });
+
+  it("should include header in first post", () => {
+    const result = thread("Body text here", { header: "THREAD:" });
+    expect(result.posts[0]).toStartWith("THREAD:");
+  });
+
+  it("should include footer in last post", () => {
+    const result = thread("Body text", { footer: "Follow for more!" });
+    expect(result.posts[result.count - 1]).toInclude("Follow for more!");
+  });
+
+  it("should return empty array for empty text", () => {
+    const result = thread("");
+    expect(result.count).toBe(0);
+    expect(result.posts.length).toBe(0);
+  });
+
+  it("should respect Mastodon 500 char limit", () => {
+    const long = "A ".repeat(400);
+    const result = thread(long, { platform: "mastodon" });
+    for (const post of result.posts) {
+      expect(post.length).toBeLessThanOrEqual(500);
+    }
+  });
+});
+
+describe("buildInPublic", () => {
+  const testMetrics = [
+    { name: "Users", values: [100, 120, 150, 180], unit: "", thresholds: { warning: 200, critical: 500 } },
+    { name: "Revenue", values: [50, 75, 90, 110], unit: "$", thresholds: { warning: 200, critical: 1000 } },
+    { name: "Uptime", values: [99.9, 99.8, 99.95, 99.99], unit: "%", thresholds: { warning: 99, critical: 95 } },
+  ];
+
+  it("should include project name", () => {
+    const result = buildInPublic(testMetrics, { project: "webhook-spark" });
+    expect(result).toInclude("webhook-spark");
+  });
+
+  it("should include metric names and values", () => {
+    const result = buildInPublic(testMetrics);
+    expect(result).toInclude("Users");
+    expect(result).toInclude("Revenue");
+    expect(result).toInclude("Uptime");
+    expect(result).toInclude("180");
+    expect(result).toInclude("110$");
+  });
+
+  it("should include trend arrows", () => {
+    const result = buildInPublic(testMetrics);
+    expect(result).toMatch(/[↑↓→]/);
+  });
+
+  it("should include sparklines by default", () => {
+    const result = buildInPublic(testMetrics);
+    expect(result).toMatch(/[▁▂▃▄▅▆▇█]/);
+  });
+
+  it("should omit sparklines when disabled", () => {
+    const result = buildInPublic(testMetrics, { includeSparklines: false });
+    expect(result).not.toMatch(/[▁▂▃▄▅▆▇█]/);
+  });
+
+  it("should include kaomoji", () => {
+    const result = buildInPublic(testMetrics, { kaomoji: true });
+    // Should have at least one kaomoji face (mood summary at end)
+    expect(result.length).toBeGreaterThan(50);
+  });
+
+  it("should include hashtags", () => {
+    const result = buildInPublic(testMetrics, { hashtags: ["buildinpublic", "saas"] });
+    expect(result).toInclude("#buildinpublic");
+    expect(result).toInclude("#saas");
+  });
+
+  it("should default to buildinpublic hashtag", () => {
+    const result = buildInPublic(testMetrics);
+    expect(result).toInclude("#buildinpublic");
+  });
+});
+
+describe("socialCaption", () => {
+  it("should join sections with separator", () => {
+    const result = socialCaption([
+      { title: "What", body: "Built a thing" },
+      { title: "Why", body: "Because reasons" },
+    ]);
+    expect(result).toInclude("What");
+    expect(result).toInclude("Built a thing");
+    expect(result).toInclude("Why");
+    expect(result).toInclude("Because reasons");
+  });
+
+  it("should include emoji prefix on titled sections", () => {
+    const result = socialCaption([
+      { title: "Metrics", body: "CPU 78%", emoji: "📊" },
+    ]);
+    expect(result).toInclude("📊 Metrics");
+  });
+
+  it("should append hashtags", () => {
+    const result = socialCaption(
+      [{ body: "Hello" }],
+      { hashtags: ["devops", "monitoring"] }
+    );
+    expect(result).toInclude("#devops");
+    expect(result).toInclude("#monitoring");
+  });
+
+  it("should append CTA", () => {
+    const result = socialCaption(
+      [{ body: "Check this out" }],
+      { cta: "Link in bio!" }
+    );
+    expect(result).toInclude("Link in bio!");
+  });
+
+  it("should truncate for Instagram limit", () => {
+    const longBody = "A".repeat(2500);
+    const result = socialCaption([{ body: longBody }], { platform: "instagram" });
+    expect(result.length).toBeLessThanOrEqual(2200);
+    expect(result).toEndWith("...");
+  });
+
+  it("should use custom separator", () => {
+    const result = socialCaption(
+      [{ body: "Part 1" }, { body: "Part 2" }],
+      { separator: "\n---\n" }
+    );
+    expect(result).toInclude("---");
+  });
+
+  it("should handle single section without title", () => {
+    const result = socialCaption([{ body: "Just a caption" }]);
+    expect(result).toBe("Just a caption");
   });
 });

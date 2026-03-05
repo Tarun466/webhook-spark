@@ -264,3 +264,80 @@ export interface CompareResult {
   readonly direction: "up" | "down" | "same";
   readonly arrow: string;
 }
+
+// --- v0.5.0: Social Media Content Engine ---
+
+export type SocialPlatform = "x" | "bluesky" | "instagram" | "youtube" | "mastodon" | "threads";
+
+export interface SocialFormatOptions {
+  readonly platform?: SocialPlatform;
+  readonly maxLength?: number;
+  readonly hashtags?: readonly string[];
+  readonly truncationMarker?: string;
+}
+
+export interface SocialFormatResult {
+  readonly text: string;
+  readonly length: number;
+  readonly limit: number;
+  readonly truncated: boolean;
+  readonly platform: SocialPlatform;
+}
+
+export interface ThreadOptions {
+  readonly platform?: SocialPlatform;
+  readonly maxLength?: number;
+  readonly numbering?: boolean;
+  readonly header?: string;
+  readonly footer?: string;
+}
+
+export interface ThreadResult {
+  readonly posts: readonly string[];
+  readonly count: number;
+  readonly platform: SocialPlatform;
+}
+
+export interface BuildInPublicOptions {
+  readonly project?: string;
+  readonly period?: string;
+  readonly hashtags?: readonly string[];
+  readonly kaomoji?: boolean;
+  readonly kaomojiTheme?: KaomojiTheme;
+  readonly platform?: SocialPlatform;
+  readonly includeSparklines?: boolean;
+}
+
+export interface SocialCaptionSection {
+  readonly title?: string;
+  readonly body: string;
+  readonly emoji?: string;
+}
+
+export interface SocialCaptionOptions {
+  readonly platform?: SocialPlatform;
+  readonly hashtags?: readonly string[];
+  readonly cta?: string;
+  readonly separator?: string;
+}
+
+export interface BlueskyConfig {
+  readonly handle: string;
+  readonly appPassword: string;
+  readonly service?: string;
+}
+
+export interface XConfig {
+  readonly apiKey: string;
+  readonly apiSecret: string;
+  readonly accessToken: string;
+  readonly accessSecret: string;
+}
+
+export interface SocialPostResult {
+  readonly success: boolean;
+  readonly platform: SocialPlatform;
+  readonly postId?: string;
+  readonly postUrl?: string;
+  readonly error?: string;
+}

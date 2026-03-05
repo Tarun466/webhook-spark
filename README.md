@@ -1,8 +1,8 @@
 # webhook-spark
 
-**Zero-dep terminal sparklines, gauges, kaomoji, heatmaps, tables, histograms & dashboards for Discord/Slack/Telegram, LCD screens, IoT & AI agents.**
+**Zero-dep sparklines, gauges, kaomoji, heatmaps, tables, histograms, social media content & posting for Discord/Slack/Telegram/Bluesky/X, LCD screens, IoT & AI agents.**
 
-Zero dependencies. TypeScript first. Under 20KB.
+Zero dependencies. TypeScript first. Under 25KB.
 
 ## Who is this for?
 
@@ -11,6 +11,8 @@ Zero dependencies. TypeScript first. Under 20KB.
 - **DIY / IoT makers** -- multi-sensor dashboards for greenhouses, aquariums, server racks
 - **AI agent builders** -- compact metric summaries that fit in LLM context windows
 - **Dashboard addicts** -- kaomoji status faces, histograms, comparison charts, all in pure text
+- **Indie hackers / #BuildInPublic** -- auto-generate social posts from metrics, post to Bluesky & X
+- **Content creators** -- structured captions, thread splitters, platform-aware formatting
 
 ## Installation
 
@@ -22,7 +24,7 @@ bun add @adametherzlab/webhook-spark
 ## Quick Start
 
 ```typescript
-import { spark, gauge, kaomoji, kaomojiStatus, heatmap, dashboard } from '@adametherzlab/webhook-spark';
+import { spark, gauge, kaomoji, kaomojiStatus, heatmap, dashboard, buildInPublic, socialFormat, thread, postToBluesky } from '@adametherzlab/webhook-spark';
 
 // Sparkline from numbers
 spark([10, 25, 60, 85, 90, 45, 30]);
@@ -236,6 +238,89 @@ trend([30, 20, 10]);  // => "↓"
 
 Supports Discord, Slack, and Telegram webhooks with validation, retry, and timeout.
 
+### `socialFormat(text, options?)` -- Platform-Aware Formatting
+
+Auto-truncates text to platform limits with smart word-boundary splitting.
+
+```typescript
+socialFormat("Long status update...", { platform: "x", hashtags: ["devops", "monitoring"] });
+// => { text: "Long status update...\n\n#devops #monitoring", truncated: false, limit: 280 }
+
+socialFormat("A".repeat(300), { platform: "bluesky" });
+// => { text: "AAAA...AAA...", truncated: true, limit: 300 }
+```
+
+**Platforms:** `x` (280), `bluesky` (300), `mastodon` (500), `threads` (500), `instagram` (2200), `youtube` (5000)
+
+### `thread(text, options?)` -- Thread Splitter
+
+Splits long text into numbered posts. Smart paragraph/sentence/word splitting.
+
+```typescript
+thread(longArticle, { platform: "x", numbering: true, header: "THREAD on monitoring:" });
+// => { posts: ["THREAD on monitoring:\n\nFirst part... (1/4)", "Second part... (2/4)", ...], count: 4 }
+```
+
+Options: `platform`, `maxLength`, `numbering`, `header`, `footer`.
+
+### `buildInPublic(metrics, options?)` -- #BuildInPublic Post Generator
+
+Generates social media posts from dashboard metrics. Includes sparklines, trend arrows, kaomoji, and hashtags.
+
+```typescript
+buildInPublic([
+  { name: 'Users',   values: [100,120,150,180], thresholds: { warning: 200, critical: 500 } },
+  { name: 'Revenue', values: [50,75,90,110], unit: '$', thresholds: { warning: 200, critical: 1000 } },
+], { project: "webhook-spark", hashtags: ["buildinpublic", "opensource"] });
+// => webhook-spark update (today):
+//
+//    ↑ Users: 180 ▁▃▅█ (*^▽^*)
+//    ↑ Revenue: 110$ ▁▃▆█ (*^▽^*)
+//
+//    ☆*:.｡.o(≧▽≦)o.｡.:*☆
+//
+//    #buildinpublic #opensource
+```
+
+Options: `project`, `period`, `hashtags`, `kaomoji`, `kaomojiTheme`, `includeSparklines`.
+
+### `socialCaption(sections, options?)` -- Multi-Section Caption Builder
+
+Build structured captions for Instagram, YouTube descriptions, etc.
+
+```typescript
+socialCaption([
+  { title: "What we shipped", body: "v0.5.0 with social posting", emoji: "🚀" },
+  { title: "Stats", body: dashboard(metrics, { compact: true }), emoji: "📊" },
+], { hashtags: ["devtools", "typescript"], cta: "Star us on GitHub!" });
+```
+
+Options: `platform`, `hashtags`, `cta`, `separator`.
+
+### `postToBluesky(text, config)` -- Post to Bluesky
+
+Post directly to Bluesky via AT Protocol. Just needs handle + app password (no OAuth).
+
+```typescript
+const result = await postToBluesky("Hello from webhook-spark!", {
+  handle: "you.bsky.social",
+  appPassword: "xxxx-xxxx-xxxx-xxxx",
+});
+// => { success: true, platform: "bluesky", postUrl: "https://bsky.app/profile/you.bsky.social/post/..." }
+```
+
+### `postToX(text, config)` -- Post to X (Twitter)
+
+Post via X API v2 with OAuth 1.0a signing. Requires developer app credentials.
+
+```typescript
+const result = await postToX("Server status: all green!", {
+  apiKey: "...", apiSecret: "...",
+  accessToken: "...", accessSecret: "...",
+});
+// => { success: true, platform: "x", postUrl: "https://x.com/i/status/..." }
+```
+
 ## Use Case Gallery
 
 ### IoT Greenhouse Dashboard
@@ -289,6 +374,52 @@ const line2 = `T:${temp}C ${trend(tempHistory)}`;
 lcd.print(line1 + '\n' + line2);
 ```
 
+### #BuildInPublic Automation
+
+```typescript
+// Generate and post a daily update from your metrics
+const post = buildInPublic(todayMetrics, {
+  project: "my-saas",
+  period: "Week 12",
+  hashtags: ["buildinpublic", "indiehacker"],
+  kaomojiTheme: "cats",
+});
+
+// Format for X and post
+const formatted = socialFormat(post, { platform: "x" });
+await postToX(formatted.text, xCredentials);
+
+// Also post the full version to Bluesky (300 chars)
+const bskyFormatted = socialFormat(post, { platform: "bluesky" });
+await postToBluesky(bskyFormatted.text, bskyCredentials);
+```
+
+### AI Agent Social Content Pipeline
+
+```typescript
+// Agent generates a metric summary, then posts across platforms
+const caption = socialCaption([
+  { title: "Daily Report", body: dashboard(metrics, { compact: true }), emoji: "📊" },
+  { title: "Highlights", body: "Shipped v2.0, 50 new users, 99.9% uptime", emoji: "🎯" },
+], { hashtags: ["devops", "monitoring"], cta: "Try it free at example.com" });
+
+// Thread it for X
+const xThread = thread(caption, { platform: "x", numbering: true });
+for (const post of xThread.posts) {
+  await postToX(post, xConfig);
+}
+```
+
+### YouTube Video Description
+
+```typescript
+const description = socialCaption([
+  { title: "In this video", body: "I show you how to build a real-time server dashboard..." },
+  { title: "Tech stack", body: "webhook-spark + Bun + Discord webhooks" },
+  { title: "Timestamps", body: "0:00 Intro\n2:30 Setup\n5:00 Dashboard\n8:00 Alerts" },
+], { platform: "youtube", hashtags: ["coding", "devops", "typescript"], cta: "Subscribe for more!" });
+```
+
 ## Why webhook-spark?
 
 | Feature | webhook-spark | blessed-contrib | cli-table3 | ink |
@@ -302,7 +433,10 @@ lcd.print(line1 + '\n' + line2);
 | Histograms | Yes | Yes | No | No |
 | Comparisons | Yes | No | No | No |
 | Webhooks | Yes | No | No | No |
-| Bundle size | <20KB | 2.5MB | 180KB | 400KB |
+| Social posting | Yes (X + Bluesky) | No | No | No |
+| Thread splitter | Yes | No | No | No |
+| #BuildInPublic | Yes | No | No | No |
+| Bundle size | <25KB | 2.5MB | 180KB | 400KB |
 | Maintained | Yes | No | Minimal | Yes |
 
 ## License

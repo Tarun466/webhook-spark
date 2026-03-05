@@ -34,9 +34,21 @@ import type {
   HistogramOptions,
   CompareOptions,
   CompareResult,
+  SocialPlatform,
+  SocialFormatOptions,
+  SocialFormatResult,
+  ThreadOptions,
+  ThreadResult,
+  BuildInPublicOptions,
+  SocialCaptionSection,
+  SocialCaptionOptions,
+  BlueskyConfig,
+  XConfig,
+  SocialPostResult,
 } from "./types.js";
-import { generateSparkline, generateSparklineWithOutliers, generateASCIIArt, spark, barChart, trend, gauge, stats, sparkWithStatus, dashboard, kaomoji, kaomojiAll, kaomojiStatus, kaomojiThemes, heatmap, miniTable, kvTable, histogram, compare } from "./sparkline.js";
+import { generateSparkline, generateSparklineWithOutliers, generateASCIIArt, spark, barChart, trend, gauge, stats, sparkWithStatus, dashboard, kaomoji, kaomojiAll, kaomojiStatus, kaomojiThemes, heatmap, miniTable, kvTable, histogram, compare, socialFormat, thread, buildInPublic, socialCaption } from "./sparkline.js";
 import { sendWebhook } from "./webhook.js";
+import { postToBluesky, postToX } from "./social.js";
 import { isNumericArray, isSparklineConfig, isWebhookConfig } from "./types.js";
 
 export {
@@ -59,7 +71,13 @@ export {
   kvTable,
   histogram,
   compare,
+  socialFormat,
+  thread,
+  buildInPublic,
+  socialCaption,
   sendWebhook,
+  postToBluesky,
+  postToX,
   isNumericArray,
   isSparklineConfig,
   isWebhookConfig,
@@ -100,4 +118,15 @@ export type {
   HistogramOptions,
   CompareOptions,
   CompareResult,
+  SocialPlatform,
+  SocialFormatOptions,
+  SocialFormatResult,
+  ThreadOptions,
+  ThreadResult,
+  BuildInPublicOptions,
+  SocialCaptionSection,
+  SocialCaptionOptions,
+  BlueskyConfig,
+  XConfig,
+  SocialPostResult,
 };

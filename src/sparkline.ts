@@ -1,4 +1,4 @@
-import type { SparklineConfig, SparklineCharacterSet, ASCIIArtConfig, GaugeOptions, StatsOptions, StatsResult, ThresholdConfig, SparkStatusResult, DashboardMetric, DashboardOptions, KaomojiMood, KaomojiTheme, KaomojiOptions, KaomojiStatusOptions, KaomojiResult, HeatmapOptions, MiniTableOptions, HistogramOptions, CompareOptions, CompareResult } from "./types.js";
+import type { SparklineConfig, SparklineCharacterSet, ASCIIArtConfig, GaugeOptions, StatsOptions, StatsResult, ThresholdConfig, SparkStatusResult, DashboardMetric, DashboardOptions, KaomojiMood, KaomojiTheme, KaomojiOptions, KaomojiStatusOptions, KaomojiResult, HeatmapOptions, MiniTableOptions, HistogramOptions, CompareOptions, CompareResult, SocialPlatform, SocialFormatOptions, SocialFormatResult, ThreadOptions, ThreadResult, BuildInPublicOptions, SocialCaptionSection, SocialCaptionOptions } from "./types.js";
 
 const DEFAULT_CHARACTER_SET: SparklineCharacterSet = "▁▂▃▄▅▆▇█";
 const BLOCK_CHARACTERS = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
@@ -820,4 +820,258 @@ export function compare(
   }
 
   return { display, delta, deltaPercent: Number(deltaPercent.toFixed(1)), direction, arrow };
+}
+
+// --- v0.5.0: Social Media Content Engine ---
+
+const PLATFORM_LIMITS: Record<SocialPlatform, number> = {
+  x: 280,
+  bluesky: 300,
+  instagram: 2200,
+  youtube: 5000,
+  mastodon: 500,
+  threads: 500,
+};
+
+/**
+ * Format text for a social media platform with character limits.
+ */
+export function socialFormat(text: string, options?: SocialFormatOptions): SocialFormatResult {
+  const platform = options?.platform ?? "x";
+  const limit = options?.maxLength ?? PLATFORM_LIMITS[platform];
+  const hashtags = options?.hashtags;
+  const marker = options?.truncationMarker ?? "...";
+
+  let body = text;
+
+  // Append hashtags
+  const hashtagStr = hashtags && hashtags.length > 0
+    ? "\n\n" + hashtags.map(t => t.startsWith("#") ? t : `#${t}`).join(" ")
+    : "";
+
+  const full = body + hashtagStr;
+
+  if (full.length <= limit) {
+    return { text: full, length: full.length, limit, truncated: false, platform };
+  }
+
+  // Truncate body to fit hashtags + marker
+  const available = limit - hashtagStr.length - marker.length;
+  if (available <= 0) {
+    // Hashtags alone exceed limit, truncate everything
+    const truncated = full.slice(0, limit - marker.length) + marker;
+    return { text: truncated, length: truncated.length, limit, truncated: true, platform };
+  }
+
+  // Try to break at word boundary
+  let cutBody = body.slice(0, available);
+  const lastSpace = cutBody.lastIndexOf(" ");
+  if (lastSpace > available * 0.6) {
+    cutBody = cutBody.slice(0, lastSpace);
+  }
+
+  const result = cutBody + marker + hashtagStr;
+  return { text: result, length: result.length, limit, truncated: true, platform };
+}
+
+/**
+ * Split long text into a thread of numbered posts.
+ */
+export function thread(text: string, options?: ThreadOptions): ThreadResult {
+  const platform = options?.platform ?? "x";
+  const limit = options?.maxLength ?? PLATFORM_LIMITS[platform];
+  const numbering = options?.numbering ?? true;
+  const header = options?.header;
+  const footer = options?.footer;
+
+  if (text.length === 0) {
+    return { posts: [], count: 0, platform };
+  }
+
+  // Split into paragraphs first, then sentences
+  const paragraphs = text.split(/\n\n+/);
+  const posts: string[] = [];
+  let current = header ? header + "\n\n" : "";
+
+  for (const para of paragraphs) {
+    const paraWithBreak = current.length > 0 ? "\n\n" + para : para;
+    // Reserve space for numbering suffix
+    const numberingReserve = numbering ? 8 : 0; // " (X/YY)"
+
+    if (current.length + paraWithBreak.length + numberingReserve <= limit) {
+      current += paraWithBreak;
+    } else {
+      // Current paragraph doesn't fit — push current post and start new one
+      if (current.length > 0) {
+        posts.push(current);
+        current = "";
+      }
+
+      // If single paragraph exceeds limit, split by sentences
+      if (para.length + numberingReserve > limit) {
+        const sentences = para.match(/[^.!?]+[.!?]+\s*/g) ?? [para];
+        for (const sentence of sentences) {
+          if (current.length + sentence.length + numberingReserve <= limit) {
+            current += sentence;
+          } else {
+            if (current.length > 0) posts.push(current);
+            // If single sentence exceeds limit, hard-split by words
+            if (sentence.length + numberingReserve > limit) {
+              const words = sentence.split(/\s+/);
+              current = "";
+              for (const word of words) {
+                const test = current.length > 0 ? current + " " + word : word;
+                if (test.length + numberingReserve <= limit) {
+                  current = test;
+                } else {
+                  if (current.length > 0) posts.push(current);
+                  current = word;
+                }
+              }
+            } else {
+              current = sentence;
+            }
+          }
+        }
+      } else {
+        current = para;
+      }
+    }
+  }
+
+  // Add footer to last post if it fits, otherwise make new post
+  if (footer) {
+    const footerStr = "\n\n" + footer;
+    const numberingReserve = numbering ? 8 : 0;
+    if (current.length + footerStr.length + numberingReserve <= limit) {
+      current += footerStr;
+    } else {
+      if (current.length > 0) posts.push(current);
+      current = footer;
+    }
+  }
+
+  if (current.length > 0) {
+    posts.push(current);
+  }
+
+  // Add numbering
+  if (numbering && posts.length > 1) {
+    const total = posts.length;
+    const numbered = posts.map((p, i) => `${p} (${i + 1}/${total})`);
+    return { posts: numbered, count: numbered.length, platform };
+  }
+
+  return { posts, count: posts.length, platform };
+}
+
+/**
+ * Generate a "building in public" social media post from metrics.
+ */
+export function buildInPublic(
+  metrics: readonly DashboardMetric[],
+  options?: BuildInPublicOptions
+): string {
+  const project = options?.project;
+  const period = options?.period ?? "today";
+  const hashtags = options?.hashtags ?? ["buildinpublic"];
+  const useKaomoji = options?.kaomoji ?? true;
+  const kaomojiTheme = options?.kaomojiTheme ?? "classic";
+  const includeSparklines = options?.includeSparklines ?? true;
+
+  const lines: string[] = [];
+
+  // Header
+  if (project) {
+    lines.push(`${project} update (${period}):`);
+  } else {
+    lines.push(`Status update (${period}):`);
+  }
+  lines.push("");
+
+  // Metrics
+  for (const m of metrics) {
+    const lastVal = m.values[m.values.length - 1];
+    const unit = m.unit ?? "";
+    const trendArrow = trend(m.values);
+    let line = `${trendArrow} ${m.name}: ${lastVal}${unit}`;
+
+    if (includeSparklines && m.values.length >= 2) {
+      const s = spark(m.values.slice(-8));
+      line += ` ${s}`;
+    }
+
+    if (useKaomoji && m.thresholds) {
+      const max = m.thresholds.critical ?? 100;
+      const result = kaomojiStatus(lastVal, max, { theme: kaomojiTheme, thresholds: m.thresholds });
+      line += ` ${result.face}`;
+    }
+
+    lines.push(line);
+  }
+
+  // Overall mood
+  if (useKaomoji && metrics.length > 0) {
+    const critCount = metrics.filter(m => {
+      if (!m.thresholds) return false;
+      const last = m.values[m.values.length - 1];
+      return m.thresholds.critical !== undefined && last >= m.thresholds.critical;
+    }).length;
+
+    const mood: KaomojiMood = critCount > 0 ? "working" : "celebrating";
+    lines.push("");
+    lines.push(kaomoji(mood, { theme: kaomojiTheme }));
+  }
+
+  // Hashtags
+  if (hashtags.length > 0) {
+    lines.push("");
+    lines.push(hashtags.map(t => t.startsWith("#") ? t : `#${t}`).join(" "));
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Build a structured social media caption from sections.
+ */
+export function socialCaption(
+  sections: readonly SocialCaptionSection[],
+  options?: SocialCaptionOptions
+): string {
+  const platform = options?.platform ?? "instagram";
+  const hashtags = options?.hashtags;
+  const cta = options?.cta;
+  const separator = options?.separator ?? "\n\n";
+  const limit = PLATFORM_LIMITS[platform];
+
+  const parts: string[] = [];
+
+  for (const section of sections) {
+    const lines: string[] = [];
+    if (section.title) {
+      const prefix = section.emoji ? `${section.emoji} ` : "";
+      lines.push(`${prefix}${section.title}`);
+    }
+    lines.push(section.body);
+    parts.push(lines.join("\n"));
+  }
+
+  if (cta) {
+    parts.push(cta);
+  }
+
+  let result = parts.join(separator);
+
+  if (hashtags && hashtags.length > 0) {
+    const hashtagStr = hashtags.map(t => t.startsWith("#") ? t : `#${t}`).join(" ");
+    result += separator + hashtagStr;
+  }
+
+  // Truncate if over limit
+  if (result.length > limit) {
+    result = result.slice(0, limit - 3) + "...";
+  }
+
+  return result;
 }
