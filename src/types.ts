@@ -341,3 +341,120 @@ export interface SocialPostResult {
   readonly postUrl?: string;
   readonly error?: string;
 }
+
+// --- v0.6.0: Deep Viz ---
+
+export interface TreeNode {
+  readonly label: string;
+  readonly children?: readonly TreeNode[];
+}
+
+export type TreeStyle = "ascii" | "rounded" | "bold" | "double";
+
+export interface TreeOptions {
+  readonly style?: TreeStyle;
+  readonly indent?: number;
+  readonly prefix?: string;
+}
+
+export interface ProgressStep {
+  readonly label: string;
+  readonly status: "done" | "active" | "pending" | "failed";
+}
+
+export type ProgressBarStyle = "line" | "dots" | "blocks" | "arrows";
+
+export interface ProgressBarOptions {
+  readonly style?: ProgressBarStyle;
+  readonly separator?: string;
+}
+
+export interface CalendarEntry {
+  readonly date: string; // YYYY-MM-DD
+  readonly value: number;
+}
+
+export interface CalendarHeatmapOptions {
+  readonly chars?: readonly string[];
+  readonly showMonths?: boolean;
+  readonly showDays?: boolean;
+}
+
+export interface BrailleSparkOptions {
+  readonly height?: number;
+  readonly filled?: boolean;
+  readonly min?: number;
+  readonly max?: number;
+}
+
+export interface CandleData {
+  readonly open: number;
+  readonly high: number;
+  readonly low: number;
+  readonly close: number;
+  readonly label?: string;
+}
+
+export interface CandlestickOptions {
+  readonly height?: number;
+  readonly bullChar?: string;
+  readonly bearChar?: string;
+  readonly wickChar?: string;
+}
+
+export interface TimelineEvent {
+  readonly label: string;
+  readonly start: number;
+  readonly duration: number;
+}
+
+export interface TimelineOptions {
+  readonly width?: number;
+  readonly fill?: string;
+  readonly empty?: string;
+  readonly showScale?: boolean;
+  readonly unit?: string;
+}
+
+export interface BoxNode {
+  readonly label: string;
+}
+
+export type BoxDiagramStyle = "single" | "double" | "rounded" | "bold";
+
+export interface BoxDiagramOptions {
+  readonly style?: BoxDiagramStyle;
+  readonly direction?: "horizontal" | "vertical";
+  readonly arrowChar?: string;
+  readonly padding?: number;
+}
+
+export interface SparkSeries {
+  readonly label: string;
+  readonly values: readonly number[];
+  readonly unit?: string;
+}
+
+export interface MultiSparkOptions {
+  readonly width?: number;
+  readonly showPeak?: boolean;
+  readonly showTrend?: boolean;
+}
+
+export interface DiffBarItem {
+  readonly label: string;
+  readonly before: number;
+  readonly after: number;
+}
+
+export interface DiffBarOptions {
+  readonly barWidth?: number;
+  readonly showDelta?: boolean;
+  readonly showPercent?: boolean;
+  readonly unit?: string;
+}
+
+export interface MatrixOptions {
+  readonly style?: "dots" | "blocks" | "braille";
+  readonly scale?: number;
+}

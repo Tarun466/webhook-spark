@@ -1,8 +1,10 @@
 # webhook-spark
 
-**Zero-dep sparklines, gauges, kaomoji, heatmaps, tables, histograms, social media content & posting for Discord/Slack/Telegram/Bluesky/X, LCD screens, IoT & AI agents.**
+**[Live Demo](https://che0md.tech/webhook-spark)**
 
-Zero dependencies. TypeScript first. Under 25KB.
+**Zero-dep sparklines, gauges, kaomoji, heatmaps, tables, histograms, trees, braille charts, candlesticks, flowcharts, timelines, dot-matrix displays & social posting for Discord/Slack/Telegram/Bluesky/X, LCD screens, IoT & AI agents.**
+
+35+ functions. Zero dependencies. TypeScript first. Under 40KB.
 
 ## Who is this for?
 
@@ -321,6 +323,165 @@ const result = await postToX("Server status: all green!", {
 // => { success: true, platform: "x", postUrl: "https://x.com/i/status/..." }
 ```
 
+### `tree(nodes, options?)` -- ASCII Tree / Hierarchy
+
+Folder structures, dependency graphs, org charts. 4 styles: `ascii`, `rounded`, `bold`, `double`.
+
+```typescript
+tree([
+  { label: "src", children: [
+    { label: "index.ts" },
+    { label: "sparkline.ts" },
+  ]},
+  { label: "package.json" },
+]);
+// => ├── src
+//    │   ├── index.ts
+//    │   └── sparkline.ts
+//    └── package.json
+```
+
+### `progressBar(steps, options?)` -- Multi-Step Pipeline
+
+CI/CD pipelines, deployment status. 4 styles: `line`, `dots`, `blocks`, `arrows`.
+
+```typescript
+progressBar([
+  { label: "Build", status: "done" },
+  { label: "Test", status: "done" },
+  { label: "Deploy", status: "active" },
+  { label: "Monitor", status: "pending" },
+]);
+// => ✅ Build ▸ ✅ Test ▸ 🔄 Deploy ▸ ⬜ Monitor
+```
+
+### `calendarHeatmap(data, options?)` -- GitHub-Style Contribution Grid
+
+365-day activity grid with month/day labels using date-indexed entries.
+
+```typescript
+calendarHeatmap([
+  { date: "2025-01-06", value: 3 },
+  { date: "2025-01-07", value: 8 },
+  { date: "2025-01-08", value: 1 },
+  // ...
+], { showMonths: true, showDays: true });
+// =>      Jan
+//    Mo   ░▓
+//    Tu   ░
+//    ...
+```
+
+### `brailleSpark(values, options?)` -- Hi-Res Braille Sparkline
+
+2x horizontal + 4x vertical resolution via Braille Unicode (U+2800-U+28FF).
+
+```typescript
+brailleSpark([1, 3, 5, 7, 9, 7, 5, 3, 1]);
+// => ⠀⠐⠠⡀⠄⠂⠈⠀  (single row braille dots)
+
+brailleSpark([1, 5, 10, 5, 1], { height: 2, filled: true });
+// => Multi-row filled area braille chart
+```
+
+### `candlestick(candles, options?)` -- OHLC Financial Chart
+
+Stock/crypto candlestick charts with bull/bear rendering.
+
+```typescript
+candlestick([
+  { open: 10, high: 15, low: 5, close: 12 },
+  { open: 12, high: 18, low: 10, close: 8 },
+  { open: 8, high: 14, low: 6, close: 13 },
+], { height: 10 });
+// =>       │
+//    █ │   │
+//    █ ░   █
+//    │ ░   █
+//    │     │
+```
+
+### `timeline(events, options?)` -- Gantt / Timeline Chart
+
+Project scheduling with start/duration offsets and scale labels.
+
+```typescript
+timeline([
+  { label: "Build", start: 0, duration: 5 },
+  { label: "Test", start: 5, duration: 5 },
+  { label: "Deploy", start: 10, duration: 5 },
+], { unit: "days" });
+// => 0    4    8    12   15  days
+//    Build   ████████░░░░░░░░░░░░
+//    Test    ░░░░░░░░████████░░░░
+//    Deploy  ░░░░░░░░░░░░░░░░████
+```
+
+### `boxDiagram(boxes, options?)` -- Box-and-Arrow Flowchart
+
+Linear flow diagrams. 4 border styles, horizontal or vertical.
+
+```typescript
+boxDiagram([
+  { label: "Ingest" },
+  { label: "Transform" },
+  { label: "Load" },
+], { style: "rounded" });
+// => ╭───────────╮ ──▶ ╭───────────╮ ──▶ ╭───────────╮
+//    │ Ingest    │     │ Transform │     │ Load      │
+//    ╰───────────╯     ╰───────────╯     ╰───────────╯
+```
+
+### `multiSpark(series, options?)` -- Multi-Series Sparklines
+
+Aligned labeled sparklines for comparing metrics.
+
+```typescript
+multiSpark([
+  { label: "CPU", values: [10, 30, 50, 70, 90], unit: "%" },
+  { label: "Memory", values: [40, 45, 50, 55, 60], unit: "%" },
+  { label: "Disk", values: [10, 10, 11, 11, 12], unit: "%" },
+]);
+// => CPU    ▁▃▅▇█  peak=90%
+//    Memory ▁▂▅▇█  peak=60%
+//    Disk   ▁▁▁▁█  peak=12%
+```
+
+### `diffBar(items, options?)` -- Diverging / Butterfly Bar Chart
+
+Before/after comparison with centered axis.
+
+```typescript
+diffBar([
+  { label: "CPU", before: 60, after: 85 },
+  { label: "Mem", before: 80, after: 75 },
+  { label: "Disk", before: 50, after: 50 },
+]);
+// => CPU  ███████▕█████████  60→85  ↑42%
+//    Mem  █████████▕████████  80→75  ↓6%
+//    Disk ██████▕██████       50→50  →0%
+```
+
+### `matrix(text, options?)` -- LED Dot Matrix Display
+
+Big text using embedded 3x5 font tables. 3 styles: `blocks`, `dots`, `braille`.
+
+```typescript
+matrix("HELLO");
+// => █ █ ███ █   █   ▀█▀
+//    █ █ █   █   █   █ █
+//    ███ ██  █   █   █ █
+//    █ █ █   █   █   █ █
+//    █ █ ███ ███ ███ ▀█▀
+
+matrix("HI", { style: "dots" });
+// => ● ● ●●●
+//    ● ● ●
+//    ●●● ●●
+//    ● ● ●
+//    ● ● ●●●
+```
+
 ## Use Case Gallery
 
 ### IoT Greenhouse Dashboard
@@ -426,17 +587,20 @@ const description = socialCaption([
 |---------|:---:|:---:|:---:|:---:|
 | Zero deps | Yes | No (17) | No (4) | No (11) |
 | Sparklines | Yes | Yes | No | No |
+| Braille sparklines | Yes | No | No | No |
 | Gauges | Yes | Yes | No | No |
 | Kaomoji | Yes | No | No | No |
 | Heatmaps | Yes | Yes | No | No |
+| Calendar heatmap | Yes | No | No | No |
 | Tables | Yes | No | Yes | No |
 | Histograms | Yes | Yes | No | No |
-| Comparisons | Yes | No | No | No |
-| Webhooks | Yes | No | No | No |
+| Candlestick charts | Yes | No | No | No |
+| Trees / hierarchies | Yes | Yes | No | No |
+| Flowcharts | Yes | No | No | No |
+| Timelines / Gantt | Yes | No | No | No |
+| Dot matrix display | Yes | No | No | No |
 | Social posting | Yes (X + Bluesky) | No | No | No |
-| Thread splitter | Yes | No | No | No |
-| #BuildInPublic | Yes | No | No | No |
-| Bundle size | <25KB | 2.5MB | 180KB | 400KB |
+| Bundle size | <40KB | 2.5MB | 180KB | 400KB |
 | Maintained | Yes | No | Minimal | Yes |
 
 ## License

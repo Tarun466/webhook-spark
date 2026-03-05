@@ -1,4 +1,4 @@
-import type { SparklineConfig, SparklineCharacterSet, ASCIIArtConfig, GaugeOptions, StatsOptions, StatsResult, ThresholdConfig, SparkStatusResult, DashboardMetric, DashboardOptions, KaomojiMood, KaomojiTheme, KaomojiOptions, KaomojiStatusOptions, KaomojiResult, HeatmapOptions, MiniTableOptions, HistogramOptions, CompareOptions, CompareResult, SocialPlatform, SocialFormatOptions, SocialFormatResult, ThreadOptions, ThreadResult, BuildInPublicOptions, SocialCaptionSection, SocialCaptionOptions } from "./types.js";
+import type { SparklineConfig, SparklineCharacterSet, ASCIIArtConfig, GaugeOptions, StatsOptions, StatsResult, ThresholdConfig, SparkStatusResult, DashboardMetric, DashboardOptions, KaomojiMood, KaomojiTheme, KaomojiOptions, KaomojiStatusOptions, KaomojiResult, HeatmapOptions, MiniTableOptions, HistogramOptions, CompareOptions, CompareResult, SocialPlatform, SocialFormatOptions, SocialFormatResult, ThreadOptions, ThreadResult, BuildInPublicOptions, SocialCaptionSection, SocialCaptionOptions, TreeNode, TreeOptions, TreeStyle, ProgressStep, ProgressBarOptions, ProgressBarStyle, CalendarEntry, CalendarHeatmapOptions, BrailleSparkOptions, CandleData, CandlestickOptions, TimelineEvent, TimelineOptions, BoxNode, BoxDiagramOptions, BoxDiagramStyle, SparkSeries, MultiSparkOptions, DiffBarItem, DiffBarOptions, MatrixOptions } from "./types.js";
 
 const DEFAULT_CHARACTER_SET: SparklineCharacterSet = "▁▂▃▄▅▆▇█";
 const BLOCK_CHARACTERS = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
@@ -1074,4 +1074,572 @@ export function socialCaption(
   }
 
   return result;
+}
+
+// --- v0.6.0: Deep Viz ---
+
+const TREE_CHARS: Record<TreeStyle, { branch: string; last: string; pipe: string; empty: string }> = {
+  ascii:   { branch: "|-- ", last: "`-- ", pipe: "|   ", empty: "    " },
+  rounded: { branch: "├── ", last: "└── ", pipe: "│   ", empty: "    " },
+  bold:    { branch: "┣━━ ", last: "┗━━ ", pipe: "┃   ", empty: "    " },
+  double:  { branch: "╠══ ", last: "╚══ ", pipe: "║   ", empty: "    " },
+};
+
+/**
+ * Render a tree/hierarchy as ASCII art.
+ */
+export function tree(nodes: readonly TreeNode[], options?: TreeOptions): string {
+  if (nodes.length === 0) return "";
+  const style = options?.style ?? "rounded";
+  const prefix = options?.prefix ?? "";
+  const chars = TREE_CHARS[style];
+
+  const lines: string[] = [];
+
+  function render(items: readonly TreeNode[], pfx: string): void {
+    for (let i = 0; i < items.length; i++) {
+      const node = items[i];
+      const isLast = i === items.length - 1;
+      const connector = isLast ? chars.last : chars.branch;
+      lines.push(pfx + connector + node.label);
+      if (node.children && node.children.length > 0) {
+        const childPfx = pfx + (isLast ? chars.empty : chars.pipe);
+        render(node.children, childPfx);
+      }
+    }
+  }
+
+  render(nodes, prefix);
+  return lines.join("\n");
+}
+
+const PROGRESS_ICONS: Record<string, Record<string, string>> = {
+  line:   { done: "✅", active: "🔄", pending: "⬜", failed: "❌" },
+  dots:   { done: "●", active: "◉", pending: "○", failed: "✖" },
+  blocks: { done: "█", active: "▓", pending: "░", failed: "▒" },
+  arrows: { done: "✓", active: "►", pending: "·", failed: "✗" },
+};
+
+/**
+ * Multi-step progress/pipeline bar.
+ */
+export function progressBar(steps: readonly ProgressStep[], options?: ProgressBarOptions): string {
+  if (steps.length === 0) return "";
+  const style: ProgressBarStyle = options?.style ?? "line";
+  const sep = options?.separator ?? " ▸ ";
+  const icons = PROGRESS_ICONS[style];
+
+  return steps.map(s => {
+    const icon = icons[s.status] ?? icons.pending;
+    return `${icon} ${s.label}`;
+  }).join(sep);
+}
+
+/**
+ * GitHub-style calendar heatmap from date-indexed entries.
+ */
+export function calendarHeatmap(data: readonly CalendarEntry[], options?: CalendarHeatmapOptions): string {
+  if (data.length === 0) return "";
+
+  const chars = options?.chars ?? [" ", "░", "▒", "▓", "█"];
+  const showMonths = options?.showMonths ?? true;
+  const showDays = options?.showDays ?? false;
+
+  // Parse dates and find range
+  const entries = data.map(d => ({ date: new Date(d.date + "T00:00:00"), value: d.value }));
+  entries.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const minVal = Math.min(...entries.map(e => e.value));
+  const maxVal = Math.max(...entries.map(e => e.value));
+
+  // Build a map for fast lookup
+  const dateMap = new Map<string, number>();
+  for (const e of entries) {
+    const key = `${e.date.getFullYear()}-${String(e.date.getMonth() + 1).padStart(2, "0")}-${String(e.date.getDate()).padStart(2, "0")}`;
+    dateMap.set(key, e.value);
+  }
+
+  // Determine the week range
+  const startDate = new Date(entries[0].date);
+  const endDate = new Date(entries[entries.length - 1].date);
+
+  // Adjust startDate to Monday
+  const startDay = startDate.getDay();
+  const mondayOffset = startDay === 0 ? -6 : 1 - startDay;
+  startDate.setDate(startDate.getDate() + mondayOffset);
+
+  // Build weeks
+  const weeks: (number | null)[][] = [];
+  const weekMonths: number[] = [];
+  const current = new Date(startDate);
+
+  while (current <= endDate) {
+    const week: (number | null)[] = [];
+    const weekMonth = current.getMonth();
+    for (let d = 0; d < 7; d++) {
+      const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
+      if (current > endDate || current < entries[0].date) {
+        week.push(null);
+      } else {
+        week.push(dateMap.get(key) ?? 0);
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    weeks.push(week);
+    weekMonths.push(weekMonth);
+  }
+
+  const dayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  function charFor(v: number | null): string {
+    if (v === null) return " ";
+    if (maxVal === minVal) return chars[Math.floor(chars.length / 2)];
+    const ratio = (v - minVal) / (maxVal - minVal);
+    const idx = Math.min(chars.length - 1, Math.max(0, Math.round(ratio * (chars.length - 1))));
+    return chars[idx];
+  }
+
+  const lines: string[] = [];
+  const leftPad = showDays ? 3 : 0;
+
+  // Month header
+  if (showMonths) {
+    let monthLine = " ".repeat(leftPad);
+    let lastMonth = -1;
+    for (let w = 0; w < weeks.length; w++) {
+      const m = weekMonths[w];
+      if (m !== lastMonth) {
+        monthLine += monthNames[m].padEnd(1);
+        lastMonth = m;
+      } else {
+        monthLine += " ";
+      }
+    }
+    lines.push(monthLine);
+  }
+
+  // 7 rows (Mon-Sun)
+  for (let d = 0; d < 7; d++) {
+    let row = showDays ? dayLabels[d] + " " : "";
+    for (let w = 0; w < weeks.length; w++) {
+      row += charFor(weeks[w][d]);
+    }
+    lines.push(row);
+  }
+
+  return lines.join("\n");
+}
+
+// Braille dot positions: column 0 = bits 0,1,2,6; column 1 = bits 3,4,5,7
+// Row 0: bit 0 (col0), bit 3 (col1)
+// Row 1: bit 1 (col0), bit 4 (col1)
+// Row 2: bit 2 (col0), bit 5 (col1)
+// Row 3: bit 6 (col0), bit 7 (col1)
+const BRAILLE_BASE = 0x2800;
+const BRAILLE_DOTS = [
+  [0x01, 0x08], // row 0
+  [0x02, 0x10], // row 1
+  [0x04, 0x20], // row 2
+  [0x40, 0x80], // row 3
+];
+
+/**
+ * High-resolution sparkline using Braille Unicode characters.
+ */
+export function brailleSpark(values: readonly number[], options?: BrailleSparkOptions): string {
+  if (values.length === 0) return "";
+
+  const height = options?.height ?? 1;
+  const filled = options?.filled ?? false;
+  const minVal = options?.min ?? Math.min(...values);
+  const maxVal = options?.max ?? Math.max(...values);
+
+  const rows = height * 4; // 4 dots per braille char vertically
+  const cols = Math.ceil(values.length / 2); // 2 dots per braille char horizontally
+
+  // Normalize values to row indices (0 = bottom, rows-1 = top)
+  const normalized = values.map(v => {
+    if (maxVal === minVal) return Math.floor(rows / 2);
+    const ratio = (v - minVal) / (maxVal - minVal);
+    return Math.min(rows - 1, Math.max(0, Math.round(ratio * (rows - 1))));
+  });
+
+  // Build grid: grid[charRow][charCol] = braille offset
+  const charRows = height;
+  const grid: number[][] = Array.from({ length: charRows }, () => Array(cols).fill(0));
+
+  for (let i = 0; i < values.length; i++) {
+    const colInChar = i % 2; // 0 or 1
+    const charCol = Math.floor(i / 2);
+    const dotRow = normalized[i]; // 0=bottom
+
+    if (filled) {
+      // Fill from bottom up to dotRow
+      for (let r = 0; r <= dotRow; r++) {
+        const charRow = charRows - 1 - Math.floor(r / 4);
+        const subRow = 3 - (r % 4);
+        if (charRow >= 0 && charRow < charRows) {
+          grid[charRow][charCol] |= BRAILLE_DOTS[subRow][colInChar];
+        }
+      }
+    } else {
+      // Single dot
+      const charRow = charRows - 1 - Math.floor(dotRow / 4);
+      const subRow = 3 - (dotRow % 4);
+      if (charRow >= 0 && charRow < charRows) {
+        grid[charRow][charCol] |= BRAILLE_DOTS[subRow][colInChar];
+      }
+    }
+  }
+
+  // Render
+  const lines: string[] = [];
+  for (let r = 0; r < charRows; r++) {
+    let line = "";
+    for (let c = 0; c < cols; c++) {
+      line += String.fromCharCode(BRAILLE_BASE + grid[r][c]);
+    }
+    lines.push(line);
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * ASCII candlestick / OHLC financial chart.
+ */
+export function candlestick(candles: readonly CandleData[], options?: CandlestickOptions): string {
+  if (candles.length === 0) return "";
+
+  const height = options?.height ?? 10;
+  const bullChar = options?.bullChar ?? "█";
+  const bearChar = options?.bearChar ?? "░";
+  const wickChar = options?.wickChar ?? "│";
+
+  // Find global min/max across all candles
+  const globalMin = Math.min(...candles.map(c => c.low));
+  const globalMax = Math.max(...candles.map(c => c.high));
+  const range = globalMax - globalMin || 1;
+
+  function toRow(val: number): number {
+    return Math.round(((val - globalMin) / range) * (height - 1));
+  }
+
+  // Build columns
+  const columns: string[][] = [];
+  for (const candle of candles) {
+    const col: string[] = Array(height).fill(" ");
+    const openRow = toRow(candle.open);
+    const closeRow = toRow(candle.close);
+    const highRow = toRow(candle.high);
+    const lowRow = toRow(candle.low);
+    const isBull = candle.close >= candle.open;
+    const bodyChar = isBull ? bullChar : bearChar;
+    const bodyTop = Math.max(openRow, closeRow);
+    const bodyBot = Math.min(openRow, closeRow);
+
+    // Draw wick
+    for (let r = lowRow; r <= highRow; r++) {
+      col[r] = wickChar;
+    }
+    // Draw body over wick
+    for (let r = bodyBot; r <= bodyTop; r++) {
+      col[r] = bodyChar;
+    }
+
+    columns.push(col);
+  }
+
+  // Render top-down
+  const lines: string[] = [];
+  for (let r = height - 1; r >= 0; r--) {
+    let line = "";
+    for (let c = 0; c < columns.length; c++) {
+      line += columns[c][r] + " ";
+    }
+    lines.push(line.trimEnd());
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Gantt-style timeline chart.
+ */
+export function timeline(events: readonly TimelineEvent[], options?: TimelineOptions): string {
+  if (events.length === 0) return "";
+
+  const totalWidth = options?.width ?? 40;
+  const fill = options?.fill ?? "█";
+  const empty = options?.empty ?? "░";
+  const showScale = options?.showScale ?? true;
+  const unit = options?.unit ?? "";
+
+  // Find max end
+  const maxEnd = Math.max(...events.map(e => e.start + e.duration));
+  const maxLabelLen = Math.max(...events.map(e => e.label.length));
+
+  const lines: string[] = [];
+
+  // Scale header
+  if (showScale) {
+    let scale = " ".repeat(maxLabelLen + 2);
+    const step = Math.max(1, Math.ceil(maxEnd / 4));
+    for (let t = 0; t <= maxEnd; t += step) {
+      const pos = Math.round((t / maxEnd) * totalWidth);
+      const label = String(t);
+      // Place label at position
+      while (scale.length < maxLabelLen + 2 + pos) scale += " ";
+      scale = scale.slice(0, maxLabelLen + 2 + pos) + label + scale.slice(maxLabelLen + 2 + pos + label.length);
+    }
+    if (unit) scale += "  " + unit;
+    lines.push(scale);
+  }
+
+  // Event bars
+  for (const event of events) {
+    const label = event.label.padEnd(maxLabelLen);
+    const startPos = Math.round((event.start / maxEnd) * totalWidth);
+    const endPos = Math.round(((event.start + event.duration) / maxEnd) * totalWidth);
+    let bar = "";
+    for (let i = 0; i < totalWidth; i++) {
+      bar += (i >= startPos && i < endPos) ? fill : empty;
+    }
+    lines.push(`${label}  ${bar}`);
+  }
+
+  return lines.join("\n");
+}
+
+const BOX_CHARS: Record<BoxDiagramStyle, { tl: string; tr: string; bl: string; br: string; h: string; v: string }> = {
+  single:  { tl: "┌", tr: "┐", bl: "└", br: "┘", h: "─", v: "│" },
+  double:  { tl: "╔", tr: "╗", bl: "╚", br: "╝", h: "═", v: "║" },
+  rounded: { tl: "╭", tr: "╮", bl: "╰", br: "╯", h: "─", v: "│" },
+  bold:    { tl: "┏", tr: "┓", bl: "┗", br: "┛", h: "━", v: "┃" },
+};
+
+/**
+ * Box-and-arrow flowchart diagram.
+ */
+export function boxDiagram(boxes: readonly BoxNode[], options?: BoxDiagramOptions): string {
+  if (boxes.length === 0) return "";
+
+  const style: BoxDiagramStyle = options?.style ?? "single";
+  const direction = options?.direction ?? "horizontal";
+  const arrowChar = options?.arrowChar ?? (direction === "horizontal" ? "──▶" : "▼");
+  const padding = options?.padding ?? 1;
+  const bc = BOX_CHARS[style];
+
+  if (direction === "vertical") {
+    const maxLen = Math.max(...boxes.map(b => b.label.length));
+    const boxWidth = maxLen + padding * 2;
+    const lines: string[] = [];
+
+    for (let i = 0; i < boxes.length; i++) {
+      const label = boxes[i].label;
+      const padded = " ".repeat(padding) + label.padEnd(maxLen) + " ".repeat(padding);
+      lines.push(bc.tl + bc.h.repeat(boxWidth) + bc.tr);
+      lines.push(bc.v + padded + bc.v);
+      lines.push(bc.bl + bc.h.repeat(boxWidth) + bc.br);
+      if (i < boxes.length - 1) {
+        const mid = Math.floor(boxWidth / 2);
+        lines.push(" ".repeat(mid + 1) + arrowChar);
+      }
+    }
+    return lines.join("\n");
+  }
+
+  // Horizontal
+  const maxLen = Math.max(...boxes.map(b => b.label.length));
+  const boxWidth = maxLen + padding * 2;
+  const gap = ` ${arrowChar} `;
+
+  const topLine: string[] = [];
+  const midLine: string[] = [];
+  const botLine: string[] = [];
+
+  for (let i = 0; i < boxes.length; i++) {
+    const label = boxes[i].label;
+    const padded = " ".repeat(padding) + label.padEnd(maxLen) + " ".repeat(padding);
+    topLine.push(bc.tl + bc.h.repeat(boxWidth) + bc.tr);
+    midLine.push(bc.v + padded + bc.v);
+    botLine.push(bc.bl + bc.h.repeat(boxWidth) + bc.br);
+    if (i < boxes.length - 1) {
+      const arrowPad = " ".repeat(gap.length);
+      topLine.push(arrowPad);
+      midLine.push(gap);
+      botLine.push(arrowPad);
+    }
+  }
+
+  return [topLine.join(""), midLine.join(""), botLine.join("")].join("\n");
+}
+
+/**
+ * Multiple sparklines aligned with labels for comparison.
+ */
+export function multiSpark(series: readonly SparkSeries[], options?: MultiSparkOptions): string {
+  if (series.length === 0) return "";
+
+  const width = options?.width;
+  const showPeak = options?.showPeak ?? true;
+  const showTrend = options?.showTrend ?? false;
+
+  const maxLabelLen = Math.max(...series.map(s => s.label.length));
+
+  return series.map(s => {
+    const label = s.label.padEnd(maxLabelLen);
+    const vals = width ? s.values.slice(-width) : s.values;
+    const sparkStr = spark(vals);
+    const parts = [label, " ", sparkStr];
+
+    if (showPeak) {
+      const peak = Math.max(...s.values);
+      const unit = s.unit ?? "";
+      parts.push(`  peak=${peak}${unit}`);
+    }
+
+    if (showTrend) {
+      parts.push(` ${trend(s.values)}`);
+    }
+
+    return parts.join("");
+  }).join("\n");
+}
+
+/**
+ * Diverging / butterfly bar chart for before/after comparison.
+ */
+export function diffBar(items: readonly DiffBarItem[], options?: DiffBarOptions): string {
+  if (items.length === 0) return "";
+
+  const barWidth = options?.barWidth ?? 10;
+  const showDelta = options?.showDelta ?? true;
+  const showPercent = options?.showPercent ?? true;
+  const unit = options?.unit ?? "";
+
+  const maxLabelLen = Math.max(...items.map(i => i.label.length));
+  const maxVal = Math.max(...items.map(i => Math.max(i.before, i.after)));
+
+  return items.map(item => {
+    const label = item.label.padStart(maxLabelLen);
+    const beforeLen = maxVal === 0 ? 0 : Math.round((item.before / maxVal) * barWidth);
+    const afterLen = maxVal === 0 ? 0 : Math.round((item.after / maxVal) * barWidth);
+
+    const beforeBar = "█".repeat(beforeLen).padStart(barWidth);
+    const afterBar = "█".repeat(afterLen).padEnd(barWidth);
+
+    const delta = item.after - item.before;
+    const pct = item.before === 0 ? (item.after === 0 ? 0 : 100) : Math.round((delta / Math.abs(item.before)) * 100);
+    const arrow = delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
+
+    const parts = [`${label}  ${beforeBar}▕${afterBar}`];
+    if (showDelta) parts.push(`${item.before}${unit}→${item.after}${unit}`);
+    if (showPercent) parts.push(`${arrow}${Math.abs(pct)}%`);
+
+    return parts.join("  ");
+  }).join("\n");
+}
+
+// --- Matrix (LED dot-matrix display) ---
+
+// 3x5 font table: each character is 5 rows of 3-char wide strings
+const MATRIX_FONT_3x5: Record<string, string[]> = {
+  "A": ["█▀█","█▀█","███","█ █","█ █"],
+  "B": ["██▀","█▀█","██▀","█▀█","██▀"],
+  "C": ["▀██","█  ","█  ","█  ","▀██"],
+  "D": ["██▀","█ █","█ █","█ █","██▀"],
+  "E": ["███","█  ","██ ","█  ","███"],
+  "F": ["███","█  ","██ ","█  ","█  "],
+  "G": ["▀██","█  ","█▀█","█ █","▀██"],
+  "H": ["█ █","█ █","███","█ █","█ █"],
+  "I": ["███"," █ "," █ "," █ ","███"],
+  "J": ["███","  █","  █","█ █","▀█▀"],
+  "K": ["█ █","█▀ ","██ ","█▀ ","█ █"],
+  "L": ["█  ","█  ","█  ","█  ","███"],
+  "M": ["█ █","███","█▀█","█ █","█ █"],
+  "N": ["█ █","██ ","█▀█","█ █","█ █"],
+  "O": ["▀█▀","█ █","█ █","█ █","▀█▀"],
+  "P": ["██▀","█ █","██▀","█  ","█  "],
+  "Q": ["▀█▀","█ █","█ █","█▀█","▀█▀"],
+  "R": ["██▀","█ █","██▀","█▀ ","█ █"],
+  "S": ["▀██","█  ","▀█▀","  █","██▀"],
+  "T": ["███"," █ "," █ "," █ "," █ "],
+  "U": ["█ █","█ █","█ █","█ █","▀█▀"],
+  "V": ["█ █","█ █","█ █","▀█▀"," █ "],
+  "W": ["█ █","█ █","█▀█","███","█ █"],
+  "X": ["█ █","█ █"," █ ","█ █","█ █"],
+  "Y": ["█ █","█ █","▀█▀"," █ "," █ "],
+  "Z": ["███","  █"," █ ","█  ","███"],
+  "0": ["▀█▀","█ █","█ █","█ █","▀█▀"],
+  "1": [" █ ","██ "," █ "," █ ","███"],
+  "2": ["▀█▀","  █","▀█▀","█  ","███"],
+  "3": ["██▀","  █","▀█▀","  █","██▀"],
+  "4": ["█ █","█ █","███","  █","  █"],
+  "5": ["███","█  ","██▀","  █","██▀"],
+  "6": ["▀██","█  ","██▀","█ █","▀█▀"],
+  "7": ["███","  █"," █ ","█  ","█  "],
+  "8": ["▀█▀","█ █","▀█▀","█ █","▀█▀"],
+  "9": ["▀█▀","█ █","▀██","  █","██▀"],
+  " ": ["   ","   ","   ","   ","   "],
+  "!": [" █ "," █ "," █ ","   "," █ "],
+  ".": ["   ","   ","   ","   "," █ "],
+  "-": ["   ","   ","███","   ","   "],
+  ":": ["   "," █ ","   "," █ ","   "],
+  "/": ["  █"," ▀ "," █ "," ▀ ","█  "],
+  "?": ["▀█▀","  █"," █ ","   "," █ "],
+  "#": [" █ ","███"," █ ","███"," █ "],
+};
+
+/**
+ * Render text as large LED dot-matrix characters.
+ */
+export function matrix(text: string, options?: MatrixOptions): string {
+  if (text.length === 0) return "";
+
+  const style = options?.style ?? "blocks";
+  const scale = options?.scale ?? 1;
+
+  const upper = text.toUpperCase();
+  const font = MATRIX_FONT_3x5;
+  const rows = 5;
+
+  // Collect character data
+  const charData: string[][] = [];
+  for (const ch of upper) {
+    const glyph = font[ch] ?? font[" "];
+    charData.push(glyph);
+  }
+
+  // Apply style transform
+  function transformChar(ch: string): string {
+    if (style === "dots") {
+      return ch === "█" ? "●" : ch === "▀" ? "◦" : ch === " " ? " " : ch;
+    }
+    if (style === "braille") {
+      return ch === "█" ? "⣿" : ch === "▀" ? "⠛" : ch === " " ? "⠀" : ch;
+    }
+    // blocks (default) - keep as-is
+    return ch;
+  }
+
+  const lines: string[] = [];
+  for (let r = 0; r < rows; r++) {
+    let line = "";
+    for (let c = 0; c < charData.length; c++) {
+      const row = charData[c][r];
+      for (const ch of row) {
+        const transformed = transformChar(ch);
+        line += transformed.repeat(scale);
+      }
+      if (c < charData.length - 1) line += " ".repeat(scale); // gap between chars
+    }
+    // Repeat row for vertical scale
+    for (let s = 0; s < scale; s++) {
+      lines.push(line);
+    }
+  }
+
+  return lines.join("\n");
 }

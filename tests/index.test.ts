@@ -21,6 +21,16 @@ import {
   thread,
   buildInPublic,
   socialCaption,
+  tree,
+  progressBar,
+  calendarHeatmap,
+  brailleSpark,
+  candlestick,
+  timeline,
+  boxDiagram,
+  multiSpark,
+  diffBar,
+  matrix,
 } from "../src/index.js";
 import type {
   SparklineConfig,
@@ -825,5 +835,698 @@ describe("socialCaption", () => {
   it("should handle single section without title", () => {
     const result = socialCaption([{ body: "Just a caption" }]);
     expect(result).toBe("Just a caption");
+  });
+});
+
+// --- v0.6.0 Tests ---
+
+describe("tree", () => {
+  it("should render a flat list", () => {
+    const result = tree([{ label: "a" }, { label: "b" }, { label: "c" }]);
+    expect(result).toInclude("a");
+    expect(result).toInclude("b");
+    expect(result).toInclude("c");
+    const lines = result.split("\n");
+    expect(lines.length).toBe(3);
+  });
+
+  it("should render nested children", () => {
+    const result = tree([{
+      label: "src",
+      children: [{ label: "index.ts" }, { label: "utils.ts" }]
+    }]);
+    expect(result).toInclude("src");
+    expect(result).toInclude("index.ts");
+    expect(result).toInclude("utils.ts");
+    const lines = result.split("\n");
+    expect(lines.length).toBe(3);
+  });
+
+  it("should use ascii style", () => {
+    const result = tree([{ label: "root", children: [{ label: "child" }] }, { label: "sibling" }], { style: "ascii" });
+    expect(result).toInclude("|-- root");
+  });
+
+  it("should use rounded style by default", () => {
+    const result = tree([{ label: "a" }, { label: "b" }]);
+    expect(result).toInclude("├");
+    expect(result).toInclude("└");
+  });
+
+  it("should use bold style", () => {
+    const result = tree([{ label: "a" }], { style: "bold" });
+    expect(result).toInclude("┗");
+  });
+
+  it("should use double style", () => {
+    const result = tree([{ label: "a" }], { style: "double" });
+    expect(result).toInclude("╚");
+  });
+
+  it("should handle deeply nested trees", () => {
+    const result = tree([{
+      label: "1",
+      children: [{ label: "1.1", children: [{ label: "1.1.1" }] }]
+    }]);
+    expect(result.split("\n").length).toBe(3);
+    expect(result).toInclude("1.1.1");
+  });
+
+  it("should handle multiple roots", () => {
+    const result = tree([{ label: "a" }, { label: "b" }]);
+    expect(result.split("\n").length).toBe(2);
+  });
+
+  it("should return empty string for empty input", () => {
+    expect(tree([])).toBe("");
+  });
+
+  it("should support prefix option", () => {
+    const result = tree([{ label: "item" }], { prefix: ">> " });
+    expect(result).toStartWith(">> ");
+  });
+});
+
+describe("progressBar", () => {
+  it("should render basic pipeline", () => {
+    const result = progressBar([
+      { label: "Build", status: "done" },
+      { label: "Test", status: "active" },
+      { label: "Deploy", status: "pending" },
+    ]);
+    expect(result).toInclude("Build");
+    expect(result).toInclude("Test");
+    expect(result).toInclude("Deploy");
+  });
+
+  it("should show correct icons for line style", () => {
+    const result = progressBar([
+      { label: "A", status: "done" },
+      { label: "B", status: "failed" },
+    ], { style: "line" });
+    expect(result).toInclude("✅");
+    expect(result).toInclude("❌");
+  });
+
+  it("should use dots style", () => {
+    const result = progressBar([
+      { label: "A", status: "done" },
+      { label: "B", status: "pending" },
+    ], { style: "dots" });
+    expect(result).toInclude("●");
+    expect(result).toInclude("○");
+  });
+
+  it("should use blocks style", () => {
+    const result = progressBar([
+      { label: "A", status: "done" },
+    ], { style: "blocks" });
+    expect(result).toInclude("█");
+  });
+
+  it("should use arrows style", () => {
+    const result = progressBar([
+      { label: "A", status: "active" },
+    ], { style: "arrows" });
+    expect(result).toInclude("►");
+  });
+
+  it("should use custom separator", () => {
+    const result = progressBar([
+      { label: "A", status: "done" },
+      { label: "B", status: "done" },
+    ], { separator: " → " });
+    expect(result).toInclude("→");
+  });
+
+  it("should handle single step", () => {
+    const result = progressBar([{ label: "Only", status: "active" }]);
+    expect(result).toInclude("Only");
+    expect(result).not.toInclude("▸");
+  });
+
+  it("should return empty for empty input", () => {
+    expect(progressBar([])).toBe("");
+  });
+
+  it("should handle all statuses", () => {
+    const result = progressBar([
+      { label: "A", status: "done" },
+      { label: "B", status: "active" },
+      { label: "C", status: "pending" },
+      { label: "D", status: "failed" },
+    ]);
+    expect(result.split(" ▸ ").length).toBe(4);
+  });
+
+  it("should include all labels in output", () => {
+    const result = progressBar([
+      { label: "Init", status: "done" },
+      { label: "Process", status: "done" },
+      { label: "Finish", status: "pending" },
+    ]);
+    expect(result).toInclude("Init");
+    expect(result).toInclude("Process");
+    expect(result).toInclude("Finish");
+  });
+});
+
+describe("calendarHeatmap", () => {
+  const sampleData = [
+    { date: "2025-01-06", value: 3 },
+    { date: "2025-01-07", value: 5 },
+    { date: "2025-01-08", value: 1 },
+    { date: "2025-01-09", value: 7 },
+    { date: "2025-01-10", value: 2 },
+  ];
+
+  it("should render a heatmap with 7 rows (days of week)", () => {
+    const result = calendarHeatmap(sampleData);
+    const lines = result.split("\n");
+    // month header + 7 day rows
+    expect(lines.length).toBe(8);
+  });
+
+  it("should show month labels by default", () => {
+    const result = calendarHeatmap(sampleData);
+    expect(result).toInclude("Jan");
+  });
+
+  it("should hide month labels when disabled", () => {
+    const result = calendarHeatmap(sampleData, { showMonths: false });
+    expect(result).not.toInclude("Jan");
+  });
+
+  it("should return empty for empty data", () => {
+    expect(calendarHeatmap([])).toBe("");
+  });
+
+  it("should use custom chars", () => {
+    const result = calendarHeatmap(sampleData, { chars: [".", "o", "O", "@", "#"] });
+    // Should contain at least some of our custom chars
+    expect(result).toMatch(/[.oO@#]/);
+  });
+
+  it("should show day labels when enabled", () => {
+    const result = calendarHeatmap(sampleData, { showDays: true });
+    expect(result).toInclude("Mo");
+  });
+
+  it("should handle single entry", () => {
+    const result = calendarHeatmap([{ date: "2025-06-15", value: 10 }]);
+    expect(result).toBeString();
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("should handle entries spanning multiple months", () => {
+    const data = [
+      { date: "2025-01-15", value: 1 },
+      { date: "2025-02-15", value: 5 },
+      { date: "2025-03-15", value: 10 },
+    ];
+    const result = calendarHeatmap(data);
+    expect(result).toInclude("Jan");
+    expect(result).toInclude("Feb");
+    expect(result).toInclude("Mar");
+  });
+
+  it("should handle all same values", () => {
+    const data = [
+      { date: "2025-01-06", value: 5 },
+      { date: "2025-01-07", value: 5 },
+    ];
+    const result = calendarHeatmap(data);
+    expect(result).toBeString();
+  });
+
+  it("should sort entries by date", () => {
+    const data = [
+      { date: "2025-01-10", value: 10 },
+      { date: "2025-01-06", value: 1 },
+    ];
+    const result = calendarHeatmap(data);
+    expect(result).toBeString();
+    expect(result.length).toBeGreaterThan(0);
+  });
+});
+
+describe("brailleSpark", () => {
+  it("should render a basic braille sparkline", () => {
+    const result = brailleSpark([1, 3, 5, 7, 9, 7, 5, 3]);
+    expect(result).toBeString();
+    expect(result.length).toBeGreaterThan(0);
+    // Should contain braille chars (U+2800-U+28FF)
+    for (const ch of result) {
+      if (ch !== "\n") {
+        const code = ch.charCodeAt(0);
+        expect(code).toBeGreaterThanOrEqual(0x2800);
+        expect(code).toBeLessThanOrEqual(0x28FF);
+      }
+    }
+  });
+
+  it("should return empty for empty input", () => {
+    expect(brailleSpark([])).toBe("");
+  });
+
+  it("should handle single value", () => {
+    const result = brailleSpark([5]);
+    expect(result).toBeString();
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("should handle all same values", () => {
+    const result = brailleSpark([5, 5, 5, 5]);
+    expect(result).toBeString();
+  });
+
+  it("should support multi-row height", () => {
+    const result = brailleSpark([1, 5, 10, 5, 1], { height: 2 });
+    const lines = result.split("\n");
+    expect(lines.length).toBe(2);
+  });
+
+  it("should support filled mode", () => {
+    const result = brailleSpark([1, 3, 5, 7], { filled: true });
+    expect(result).toBeString();
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("should support custom min/max", () => {
+    const result = brailleSpark([50, 60, 70], { min: 0, max: 100 });
+    expect(result).toBeString();
+  });
+
+  it("should handle two values (one braille char)", () => {
+    const result = brailleSpark([0, 10]);
+    expect(result).toBeString();
+    expect(result.replace(/\n/g, "").length).toBe(1);
+  });
+
+  it("should handle odd number of values", () => {
+    const result = brailleSpark([1, 2, 3]);
+    expect(result).toBeString();
+    // ceil(3/2) = 2 chars
+    expect(result.replace(/\n/g, "").length).toBe(2);
+  });
+
+  it("should produce different output for ascending vs descending", () => {
+    const asc = brailleSpark([1, 2, 3, 4]);
+    const desc = brailleSpark([4, 3, 2, 1]);
+    expect(asc).not.toBe(desc);
+  });
+});
+
+describe("candlestick", () => {
+  const sampleCandles = [
+    { open: 10, high: 15, low: 5, close: 12 },
+    { open: 12, high: 18, low: 10, close: 8 },
+    { open: 8, high: 14, low: 6, close: 13 },
+  ];
+
+  it("should render a chart with correct height", () => {
+    const result = candlestick(sampleCandles, { height: 10 });
+    const lines = result.split("\n");
+    expect(lines.length).toBe(10);
+  });
+
+  it("should use default height of 10", () => {
+    const result = candlestick(sampleCandles);
+    const lines = result.split("\n");
+    expect(lines.length).toBe(10);
+  });
+
+  it("should return empty for empty input", () => {
+    expect(candlestick([])).toBe("");
+  });
+
+  it("should handle single candle", () => {
+    const result = candlestick([{ open: 10, high: 15, low: 5, close: 12 }]);
+    expect(result).toBeString();
+    expect(result.split("\n").length).toBe(10);
+  });
+
+  it("should show bull char for close >= open", () => {
+    const result = candlestick([{ open: 5, high: 10, low: 1, close: 8 }]);
+    expect(result).toInclude("█"); // default bull char
+  });
+
+  it("should show bear char for close < open", () => {
+    const result = candlestick([{ open: 8, high: 10, low: 1, close: 5 }]);
+    expect(result).toInclude("░"); // default bear char
+  });
+
+  it("should use custom bull/bear chars", () => {
+    const result = candlestick(
+      [{ open: 5, high: 10, low: 1, close: 8 }],
+      { bullChar: "#", bearChar: "." }
+    );
+    expect(result).toInclude("#");
+  });
+
+  it("should handle doji (open == close)", () => {
+    const result = candlestick([{ open: 10, high: 15, low: 5, close: 10 }]);
+    expect(result).toBeString();
+  });
+
+  it("should handle all same values", () => {
+    const result = candlestick([{ open: 5, high: 5, low: 5, close: 5 }]);
+    expect(result).toBeString();
+  });
+
+  it("should handle multiple candles with varying range", () => {
+    const candles = [
+      { open: 100, high: 150, low: 80, close: 120 },
+      { open: 120, high: 200, low: 100, close: 90 },
+    ];
+    const result = candlestick(candles, { height: 8 });
+    expect(result.split("\n").length).toBe(8);
+  });
+});
+
+describe("timeline", () => {
+  const sampleEvents = [
+    { label: "Build", start: 0, duration: 5 },
+    { label: "Test", start: 5, duration: 5 },
+    { label: "Deploy", start: 10, duration: 5 },
+  ];
+
+  it("should render events with correct number of lines", () => {
+    const result = timeline(sampleEvents);
+    const lines = result.split("\n");
+    // 1 scale line + 3 event lines
+    expect(lines.length).toBe(4);
+  });
+
+  it("should include event labels", () => {
+    const result = timeline(sampleEvents);
+    expect(result).toInclude("Build");
+    expect(result).toInclude("Test");
+    expect(result).toInclude("Deploy");
+  });
+
+  it("should return empty for empty input", () => {
+    expect(timeline([])).toBe("");
+  });
+
+  it("should hide scale when disabled", () => {
+    const result = timeline(sampleEvents, { showScale: false });
+    const lines = result.split("\n");
+    expect(lines.length).toBe(3); // just event lines
+  });
+
+  it("should use custom fill and empty chars", () => {
+    const result = timeline(sampleEvents, { fill: "#", empty: "." });
+    expect(result).toInclude("#");
+    expect(result).toInclude(".");
+  });
+
+  it("should show unit in scale", () => {
+    const result = timeline(sampleEvents, { unit: "days" });
+    expect(result).toInclude("days");
+  });
+
+  it("should handle single event", () => {
+    const result = timeline([{ label: "Only", start: 0, duration: 10 }]);
+    expect(result).toInclude("Only");
+  });
+
+  it("should handle overlapping events", () => {
+    const events = [
+      { label: "A", start: 0, duration: 10 },
+      { label: "B", start: 5, duration: 10 },
+    ];
+    const result = timeline(events);
+    expect(result).toInclude("A");
+    expect(result).toInclude("B");
+  });
+
+  it("should respect custom width", () => {
+    const result = timeline(sampleEvents, { width: 20 });
+    const lines = result.split("\n");
+    // Should have event lines with bars
+    expect(lines.length).toBeGreaterThan(1);
+    expect(result).toInclude("Build");
+  });
+
+  it("should handle events starting at different offsets", () => {
+    const events = [
+      { label: "Early", start: 0, duration: 3 },
+      { label: "Late", start: 7, duration: 3 },
+    ];
+    const result = timeline(events);
+    expect(result).toBeString();
+  });
+});
+
+describe("boxDiagram", () => {
+  const sampleBoxes = [
+    { label: "Ingest" },
+    { label: "Transform" },
+    { label: "Load" },
+  ];
+
+  it("should render horizontal flowchart with 3 lines", () => {
+    const result = boxDiagram(sampleBoxes);
+    const lines = result.split("\n");
+    expect(lines.length).toBe(3); // top, middle, bottom
+  });
+
+  it("should include all labels", () => {
+    const result = boxDiagram(sampleBoxes);
+    expect(result).toInclude("Ingest");
+    expect(result).toInclude("Transform");
+    expect(result).toInclude("Load");
+  });
+
+  it("should return empty for empty input", () => {
+    expect(boxDiagram([])).toBe("");
+  });
+
+  it("should render vertical direction", () => {
+    const result = boxDiagram(sampleBoxes, { direction: "vertical" });
+    const lines = result.split("\n");
+    // 3 boxes x 3 lines each + 2 arrows = 11
+    expect(lines.length).toBe(11);
+    expect(result).toInclude("▼");
+  });
+
+  it("should use single style by default", () => {
+    const result = boxDiagram([{ label: "A" }]);
+    expect(result).toInclude("┌");
+    expect(result).toInclude("┘");
+  });
+
+  it("should use rounded style", () => {
+    const result = boxDiagram([{ label: "A" }], { style: "rounded" });
+    expect(result).toInclude("╭");
+    expect(result).toInclude("╯");
+  });
+
+  it("should use double style", () => {
+    const result = boxDiagram([{ label: "A" }], { style: "double" });
+    expect(result).toInclude("╔");
+    expect(result).toInclude("╝");
+  });
+
+  it("should use bold style", () => {
+    const result = boxDiagram([{ label: "A" }], { style: "bold" });
+    expect(result).toInclude("┏");
+    expect(result).toInclude("┛");
+  });
+
+  it("should include arrow between boxes", () => {
+    const result = boxDiagram([{ label: "A" }, { label: "B" }]);
+    expect(result).toInclude("▶");
+  });
+
+  it("should handle single box without arrows", () => {
+    const result = boxDiagram([{ label: "Solo" }]);
+    expect(result).not.toInclude("▶");
+    expect(result).toInclude("Solo");
+  });
+});
+
+describe("multiSpark", () => {
+  const sampleSeries = [
+    { label: "CPU", values: [10, 30, 50, 70, 90], unit: "%" },
+    { label: "Memory", values: [40, 45, 50, 55, 60], unit: "%" },
+    { label: "Disk", values: [10, 10, 11, 11, 12], unit: "%" },
+  ];
+
+  it("should render one line per series", () => {
+    const result = multiSpark(sampleSeries);
+    const lines = result.split("\n");
+    expect(lines.length).toBe(3);
+  });
+
+  it("should include all labels", () => {
+    const result = multiSpark(sampleSeries);
+    expect(result).toInclude("CPU");
+    expect(result).toInclude("Memory");
+    expect(result).toInclude("Disk");
+  });
+
+  it("should show peak values by default", () => {
+    const result = multiSpark(sampleSeries);
+    expect(result).toInclude("peak=90%");
+    expect(result).toInclude("peak=60%");
+    expect(result).toInclude("peak=12%");
+  });
+
+  it("should hide peak when disabled", () => {
+    const result = multiSpark(sampleSeries, { showPeak: false });
+    expect(result).not.toInclude("peak=");
+  });
+
+  it("should show trend when enabled", () => {
+    const result = multiSpark(sampleSeries, { showTrend: true });
+    expect(result).toMatch(/[↑↓→]/);
+  });
+
+  it("should return empty for empty input", () => {
+    expect(multiSpark([])).toBe("");
+  });
+
+  it("should align labels by padding", () => {
+    const result = multiSpark(sampleSeries);
+    const lines = result.split("\n");
+    // CPU should be padded to match Memory length
+    expect(lines[0]).toStartWith("CPU   ");
+  });
+
+  it("should include sparkline characters", () => {
+    const result = multiSpark(sampleSeries);
+    expect(result).toMatch(/[▁▂▃▄▅▆▇█]/);
+  });
+
+  it("should respect width option", () => {
+    const result = multiSpark([
+      { label: "A", values: [1,2,3,4,5,6,7,8,9,10] }
+    ], { width: 5 });
+    // Should only use last 5 values for sparkline
+    expect(result).toBeString();
+  });
+
+  it("should handle series without unit", () => {
+    const result = multiSpark([{ label: "X", values: [1, 5, 10] }]);
+    expect(result).toInclude("peak=10");
+    expect(result).not.toInclude("peak=10%");
+  });
+});
+
+describe("diffBar", () => {
+  const sampleItems = [
+    { label: "CPU", before: 60, after: 85 },
+    { label: "Mem", before: 80, after: 75 },
+    { label: "Disk", before: 50, after: 50 },
+  ];
+
+  it("should render one line per item", () => {
+    const result = diffBar(sampleItems);
+    const lines = result.split("\n");
+    expect(lines.length).toBe(3);
+  });
+
+  it("should include all labels", () => {
+    const result = diffBar(sampleItems);
+    expect(result).toInclude("CPU");
+    expect(result).toInclude("Mem");
+    expect(result).toInclude("Disk");
+  });
+
+  it("should show up arrow for increases", () => {
+    const result = diffBar([{ label: "A", before: 10, after: 20 }]);
+    expect(result).toInclude("↑");
+  });
+
+  it("should show down arrow for decreases", () => {
+    const result = diffBar([{ label: "A", before: 20, after: 10 }]);
+    expect(result).toInclude("↓");
+  });
+
+  it("should show right arrow for no change", () => {
+    const result = diffBar([{ label: "A", before: 50, after: 50 }]);
+    expect(result).toInclude("→");
+  });
+
+  it("should return empty for empty input", () => {
+    expect(diffBar([])).toBe("");
+  });
+
+  it("should include divider character", () => {
+    const result = diffBar(sampleItems);
+    expect(result).toInclude("▕");
+  });
+
+  it("should show delta values by default", () => {
+    const result = diffBar([{ label: "A", before: 10, after: 20 }]);
+    expect(result).toInclude("10→20");
+  });
+
+  it("should show percentage by default", () => {
+    const result = diffBar([{ label: "A", before: 10, after: 20 }]);
+    expect(result).toInclude("100%");
+  });
+
+  it("should support custom unit", () => {
+    const result = diffBar([{ label: "A", before: 10, after: 20 }], { unit: "ms" });
+    expect(result).toInclude("10ms→20ms");
+  });
+});
+
+describe("matrix", () => {
+  it("should render 5 rows for single character", () => {
+    const result = matrix("A");
+    const lines = result.split("\n");
+    expect(lines.length).toBe(5);
+  });
+
+  it("should render text with block style by default", () => {
+    const result = matrix("HI");
+    expect(result).toInclude("█");
+  });
+
+  it("should support dots style", () => {
+    const result = matrix("A", { style: "dots" });
+    expect(result).toInclude("●");
+  });
+
+  it("should support braille style", () => {
+    const result = matrix("A", { style: "braille" });
+    expect(result).toInclude("⣿");
+  });
+
+  it("should return empty for empty string", () => {
+    expect(matrix("")).toBe("");
+  });
+
+  it("should handle numbers", () => {
+    const result = matrix("123");
+    expect(result).toBeString();
+    expect(result.split("\n").length).toBe(5);
+  });
+
+  it("should handle spaces", () => {
+    const result = matrix("A B");
+    expect(result.split("\n").length).toBe(5);
+  });
+
+  it("should be case insensitive", () => {
+    const upper = matrix("HELLO");
+    const lower = matrix("hello");
+    expect(upper).toBe(lower);
+  });
+
+  it("should handle unknown characters as spaces", () => {
+    const result = matrix("@");
+    expect(result).toBeString();
+    expect(result.split("\n").length).toBe(5);
+  });
+
+  it("should support scale option", () => {
+    const result = matrix("A", { scale: 2 });
+    const lines = result.split("\n");
+    expect(lines.length).toBe(10); // 5 rows * 2 scale
   });
 });
