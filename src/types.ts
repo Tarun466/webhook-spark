@@ -10,6 +10,24 @@ export interface SparklineConfig {
   readonly dataPoints: readonly number[];
 }
 
+export type QRCodeErrorCorrectionLevel = 'L' | 'M' | 'Q' | 'H';
+
+export interface QRImageOptions {
+  readonly errorCorrection?: QRCodeErrorCorrectionLevel;
+  readonly margin?: number;
+  readonly size?: number;
+  readonly darkColor?: string;
+  readonly lightColor?: string;
+}
+
+export interface ASCIIQROptions {
+  readonly errorCorrection?: QRCodeErrorCorrectionLevel;
+  readonly margin?: number;
+  readonly inverted?: boolean;
+  readonly blockChar?: string;
+  readonly whiteChar?: string;
+}
+
 export interface WebhookPayload {
   readonly timestamp: Date;
   readonly metricName: string;
@@ -29,18 +47,4 @@ export interface WebhookConfig {
   readonly telegram?: TelegramConfig;
 }
 
-export interface WebhookError extends Error {
-  readonly code: "WEBHOOK_ERROR";
-  readonly provider: WebhookProvider;
-  readonly statusCode?: number;
-  readonly endpoint?: string;
-  readonly metricName?: string;
-}
-
-export interface ValidationError extends Error {
-  readonly code: "VALIDATION_ERROR";
-  readonly details: string[];
-  readonly context?: Record<string, unknown>;
-}
-
-// Rest of types.ts remains unchanged...
+// Rest of existing types remain unchanged...
